@@ -1,0 +1,35 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+
+# Node / build
+node_modules/
+dist/
+build/
+coverage/
+*.tsbuildinfo
+
+# Env / secrets — never commit keys (see ARCHITECTURE.md §Security)
+.env
+.env.*
+*.pem
+!**/test/fixtures/*.pem
+
+# data/ is the ODbL layer: derived/generated artifacts are reproducible
+# by pinned build scripts (see data/README.md) and are never committed.
+data/**
+!data/README.md
+!data/*.md
+
+# Large source datasets pulled at build time
+*.osm.pbf
+*.osc.gz
+*.poly
+*.bsp
+
+# Bake caches
+.cache/
+tmp/
