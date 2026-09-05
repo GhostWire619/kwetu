@@ -119,7 +119,7 @@ the terrain stack is written, which is exactly why the gate exists.
 | Thread | Owns | Rationale |
 |---|---|---|
 | Main | three.js scene graph, input, UI, i18next, **the AudioContext** | render-loop latency is the budget everything else respects |
-| Physics worker | Rapier WASM — the deterministic compat build wherever cross-platform determinism matters (B-EPH-02, S0.11), the general compat build otherwise (§13) — fixed timestep, **one Rapier world per celestial body**, never one global world, never per region or tile | stepping a real-scale scene must never stall a frame |
+| Physics worker | Rapier WASM — the deterministic compat build wherever cross-platform determinism matters (B-EPH-02, S0.11), the general compat build otherwise (§13) — fixed timestep, **one Rapier world per active local contact bubble**; multiple bubbles can belong to a body, tiles only supply colliders | stepping a real-scale scene must never stall a frame |
 | Decode worker(s) | KTX2/basis transcoder, meshopt decoder, PMTiles range fetch + decompress | decode spikes are bursty and must not touch the render thread |
 
 Physics runs at a fixed tick inside its worker; the main thread renders
@@ -149,8 +149,7 @@ The shape of the answer, one line each — **canonical details, frames,
 and rules live in `COORDINATE_SYSTEM.md`**:
 
 - Simulation state is float64 (Go runtime) and float64 on the client
-  wherever a coordinate is held; float32 exists only *inside* render
-  buffers.
+  wherever a coordinate is held; float32 is confined to local contact solving and render buffers.
 - Rendering is camera-relative (floating origin) **and** uses a
   logarithmic depth buffer — always both, never one without the other.
   The camera is the origin of its own float32 frame, so everything the
@@ -401,6 +400,10 @@ caret ranges at deploy time.
 | Node.js (build + tooling) | 24.x LTS | [MEASURED 2026-09-05 — dev-host environment (MASTER_PROMPT.md §48)] — pin the exact version at first code commit |
 | Python (ephemeris oracle scripts) | 3.14 | [MEASURED 2026-09-05 — dev-host environment (MASTER_PROMPT.md §48)] — pin the exact version at first code commit |
 | Blender (bake-time authoring) | 5.0 | [MEASURED 2026-09-05 — dev-host environment (MASTER_PROMPT.md §48)] — build-time tool, never distributed; an exported .glb carries no GPL obligation (ASSET_STRATEGY.md §5) |
+
+TypeScript declaration correction (researched 2026-09-05): Three.js points to community-maintained types in its [official installation guide](https://threejs.org/manual/en/installation.html). Remove the former r168 bundled-types prohibition. At scaffolding, verify and pin a compatible `@types/three` release and ledger it before installation; compile representative core and addon imports. No dependency has been installed by this documentation change.
+
+Vehicle movement and persistence: [docs/VEHICLES_AND_FLIGHT.md](docs/VEHICLES_AND_FLIGHT.md). Powered flight is f64 numerical integration; analytic coast and local f32 contacts are separate regimes. The server validates each using its sanctioned model.
 
 ## 14. Related documents
 

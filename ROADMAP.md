@@ -66,7 +66,7 @@ starts only when the previous gate passes and no §Budgets row it depends on is 
 | 4 — Car | Vehicles + world interaction | Scripted loop through Dar streets, suspension behaves; rejoin finds car where left |
 | 5 — Multiplayer | 2+ players, server-authoritative | Two browsers see each other interpolated; unvalidated positions rejected (drift measured); mid-session reconnect recovers |
 | 6 — Voice | Proximity voice behind CGNAT | Positional hearing w/ attenuation; TURN-forced connection succeeds; server mute not bypassable |
-| 7 — Rocket | Ascent + rails handoff | Launch from Dar-coast pad, Rapier→Kepler handoff without visible discontinuity, land back; ephemeris matches Python-oracle fixtures |
+| 7 — Rocket | Ascent + rails handoff | Launch from Dar-coast pad, powered-flight→coast handoff without visible discontinuity, land back; ephemeris matches Python-oracle fixtures |
 | 8 — Orbit & Moon | Off-Earth bodies | Lunar orbit → descent → walk at real scale; Earth-in-sky correct via astronomy-engine |
 | Vertical Slice | The promise, integrated | Fresh browser: pad→walk→drive→launch→orbit→lunar landing alongside another player, with voice, EN + sw, on a measured connection profile |
 | Alpha | A world people can live in | kill -9 + snapshot recovery; backup restore drill on video; measured concurrent-player figure; compliance + attribution screens pass |
@@ -249,7 +249,7 @@ Exit criteria are quoted verbatim from §2. "Spikes consumed" names the Phase-0 
 ### Phase 1 — Engine core
 
 - **Goal**: Precision + rendering in empty world.
-- **Deliverables**: the frame chain (SSB → heliocentric → planet-centered inertial → planet-fixed rotating → local floating-origin scene) with f64 math in JS and f32 only at last upload; log depth AND floating origin per the S0.2 outcome; the S0.7 universe clock; worker layout; an empty-world scene covering the camera range the criterion demands; Playwright perf smoke from S0.11.
+- **Deliverables**: the frame chain (SSB → heliocentric → planet-centered inertial → planet-fixed rotating → local floating-origin scene) with f64 math in JS and f32 only at bounded local contact and final render upload; log depth AND floating origin per the S0.2 outcome; the S0.7 universe clock; worker layout; an empty-world scene covering the camera range the criterion demands; Playwright perf smoke from S0.11.
 - **Exit criterion**: Camera flies 1 m → 1e10 m in Chrome + Firefox: no jitter, no z-fighting; shell transfer recorded
 - **Spikes consumed**: S0.1, S0.2, S0.3 (shell row), S0.7, S0.11.
 - **Decisions produced**: ADR GLSL-ShaderMaterial vs TSL (decided at project start — mixed usage across agent-written code is a renderer-compatibility hazard); ADR cross-origin isolation (COOP/COEP vs single-threaded workers — a written decision, never an accident); ADR worker layout; the COORDINATE_SYSTEM.md naming conventions (`Frame`, `toPlanetFixed`, `LocalScene`).
@@ -265,7 +265,7 @@ Exit criteria are quoted verbatim from §2. "Spikes consumed" names the Phase-0 
 ### Phase 3 — Walk
 
 - **Goal**: Character on real ground, single-player.
-- **Deliverables**: Rapier KinematicCharacterController on real streamed terrain (one Rapier world for Earth, per-body gravity); position persistence across reload via Nakama storage (world-state schema gated by S0.7's clock decisions); the integrated-GPU baseline defined and recorded (fills B-VRAM-02); HUD strings land EN + sw in the same change via the S0.10 pipeline.
+- **Deliverables**: Rapier KinematicCharacterController on real streamed terrain (local contact bubbles on Earth, Z-up gravity); position persistence across reload via Nakama storage (world-state schema gated by S0.7's clock decisions); the integrated-GPU baseline defined and recorded (fills B-VRAM-02); HUD strings land EN + sw in the same change via the S0.10 pipeline.
 - **Exit criterion**: Walk Stone Town seafront inland on the dev box and the defined integrated-GPU baseline, with the frame rate recorded into B-FPS-01 tier B; position persists across reload
 - **Spikes consumed**: S0.2 (baseline hardware), S0.3 (in-region payload), S0.10 (UI strings pipeline).
 - **Decisions produced**: ADR character-controller parameters; ADR world-state persistence schema v1.
@@ -281,7 +281,7 @@ Exit criteria are quoted verbatim from §2. "Spikes consumed" names the Phase-0 
 ### Phase 5 — Multiplayer
 
 - **Goal**: 2+ players, server-authoritative.
-- **Deliverables**: Go-runtime match handlers doing authoritative validation by closed-form kinematic/analytic replay with drift thresholds (never full physics — no Go Rapier bindings); prediction/interpolation tuned to the measured B-RTT rows; the Go AoI cell grid sized by the B-AOI rows; hosting region chosen from B-RTT/B-COST; explicit match snapshots for crash-resume (Nakama match state is in-memory, never auto-persisted); reconnect/rejoin recovery including the Caddy-reload WebSocket path.
+- **Deliverables**: Go-runtime match handlers doing authoritative validation by versioned analytic coast, numerical powered flight and contact-kinematic replay with drift thresholds (no full server contact solver by design); prediction/interpolation tuned to the measured B-RTT rows; the Go AoI cell grid sized by the B-AOI rows; hosting region chosen from B-RTT/B-COST; explicit match snapshots for crash-resume (Nakama match state is in-memory, never auto-persisted); reconnect/rejoin recovery including the Caddy-reload WebSocket path.
 - **Exit criterion**: Two browsers see each other interpolated; unvalidated positions rejected (drift measured); mid-session reconnect recovers
 - **Spikes consumed**: S0.6 (validation contract), S0.8 (AoI sizing), S0.9 (region + cost).
 - **Decisions produced**: ADR hosting region; ADR AoI cell size adopted; ADR drift thresholds; ADR snapshot/reconnect policy.
@@ -297,15 +297,15 @@ Exit criteria are quoted verbatim from §2. "Spikes consumed" names the Phase-0 
 ### Phase 7 — Rocket
 
 - **Goal**: Ascent + rails handoff.
-- **Deliverables**: the in-house f64 Kepler/patched-conic module (GDCelestial, OrbitalObject3D and Principia as algorithm references only); ascent under Rapier → analytic rails (`M = M0 + n·t`) handoff → descent, with the S0.7 warp semantics; a Dar-coast launch pad; the Python oracle (Skyfield + de440s.bsp, astroquery/Horizons at build time only — fixtures precomputed and committed).
-- **Exit criterion**: Launch from Dar-coast pad, Rapier→Kepler handoff without visible discontinuity, land back; ephemeris matches Python-oracle fixtures
+- **Deliverables**: the in-house f64 Kepler/patched-conic module (GDCelestial, OrbitalObject3D and Principia as algorithm references only); ascent under f64 powered flight → analytic coast (`M = M0 + n·t`) handoff → descent, with the S0.7 warp semantics; a Dar-coast launch pad; the Python oracle (Skyfield + de440s.bsp, astroquery/Horizons at build time only — fixtures precomputed and committed).
+- **Exit criterion**: Launch from Dar-coast pad, powered-flight→coast handoff without visible discontinuity, land back; ephemeris matches Python-oracle fixtures
 - **Spikes consumed**: S0.7 (handoff design), S0.11 (golden fixtures).
-- **Decisions produced**: ADR SOI handoff algorithm; ADR time-warp thresholds; ADR launch-site and rails conventions; accuracy-envelope statement (±1 arcmin class is sky quality, not landing guidance — B-CONST-06).
+- **Decisions produced**: ADR SOI handoff algorithm; ADR measured movement-regime thresholds; ADR launch-site and rails conventions; accuracy-envelope statement (±1 arcmin class is sky quality, not landing guidance — B-CONST-06).
 
 ### Phase 8 — Orbit & Moon
 
 - **Goal**: Off-Earth bodies.
-- **Deliverables**: the Moon at real scale (LOLA/SLDEM2015 + LROC WAC per DATA_SOURCES.md pins); lunar orbit → descent → walk; Earth-in-sky via astronomy-engine's topocentric Observer; the second Rapier world (one per body) with the multi-world switching rules; cross-SOI travel reusing the Phase 7 handoff.
+- **Deliverables**: the Moon at real scale (LOLA/SLDEM2015 + LROC WAC per DATA_SOURCES.md pins); lunar orbit → descent → walk; Earth-in-sky via astronomy-engine's topocentric Observer; lunar contact bubbles with atomic frame/ownership transfer; cross-SOI travel reusing the Phase 7 handoff.
 - **Exit criterion**: Lunar orbit → descent → walk at real scale; Earth-in-sky correct via astronomy-engine
 - **Spikes consumed**: S0.1 (frame chain off-Earth), S0.2 (planet LOD reuse), S0.11 (fixtures extended to the Moon).
 - **Decisions produced**: ADR off-Earth data pins (Moon first, then per-body); ADR multi-world physics switching.
@@ -387,7 +387,7 @@ Each spike lands exactly one ADR in docs/adr/ and either fills its named §Budge
 ### S0.7 — Time-warp / universe-clock semantics
 
 - **Question**: who owns the one shared universe clock; how do TT and UTC relate (leap-second policy); how does warp behave in shared space; how do bodies hand off between physics and rails?
-- **Exit criterion**: an ADR defining clock authority, the TT/UTC policy, warp semantics in shared space (below threshold: Rapier fixed timestep + interpolation; above: analytic Kepler rails), and the SOI handoff design — written well enough to gate NETWORKING.md and the world-state schema. A Phase-0 deliverable per COORDINATE_SYSTEM.md.
+- **Exit criterion**: a measured verification ADR for ADR-001 clock authority, TT adapters, restart and shared-time semantics (CONTACT_LOCAL / FLIGHT_DYNAMIC / ORBIT_COAST, independent of clock speed), and the SOI handoff design — written well enough to gate NETWORKING.md and the world-state schema. A Phase-0 deliverable per COORDINATE_SYSTEM.md.
 - **Fills Budgets rows**: none (semantics, not measurement).
 
 ### S0.8 — AoI micro-benchmark
@@ -431,7 +431,7 @@ Known gaps from the research phase, mapped to the spike or written decision that
 | 3 | No AoI, tick-cost, or capacity data anywhere | S0.8 | Multiplayer gates carry unsupportable concurrency promises; single-node Nakama limits met live in Phase 5 with no measured fallback. |
 | 4 | Hosting region, latency and cost unknown | S0.9 | Region chosen on vibes; prediction aggressiveness, TURN placement and budget all wrong; re-migration after Phase 5 is a production incident. |
 | 5 | Server-validation contract undefined | S0.6 | Docs promise server-authoritative physics the Go runtime cannot run; ships as either cheating or rubber-banding. |
-| 6 | Universe clock, TT/UTC and warp semantics undefined | S0.7 | World-state schema and netcode built on wrong time semantics; retrofit breaks persistence and every Phase 5+ replay. |
+| 6 | Clock policy accepted in ADR-001; adapters/restart and movement handoff unverified | S0.7 | World-state schema and netcode built on wrong time semantics; retrofit breaks persistence and every Phase 5+ replay. |
 | 7 | Bitwise determinism and golden ephemeris unproven | S0.11 | Interstellar's determinism gate fails after years of accumulation; ephemeris bugs surface at the Phase 7 launch instead of in CI. |
 | 8 | License ledger incomplete or unverified | S0.4 | A Havok-class trap (npm LICENSE says MIT, binary proprietary) ships; an unledgered dataset breaches the ODbL boundary; forced relicensing. |
 | 9 | Trademark uncleared | S0.5 | Forced rename after public launch: docs, attribution, domains and community reworked. |
@@ -463,3 +463,21 @@ Known gaps from the research phase, mapped to the spike or written decision that
 - **Disk**: dataset phases (2, 8, Solar System) want **~54 GB free** on the WSL2/data drive [PLACEHOLDER — gate: Phase 2 — recount from the pinned DATA_SOURCES.md dataset list; per-dataset sizes belong in those provenance rows, not here]. Check before starting Phase 2.
 - **TLS from day one**: the microphone requires a secure context, so local development serves over TLS (Caddy's local CA); the "plain http:// dev server" shortcut is unavailable and must not be built around.
 - **Commands**: intentionally placeholder until Phase 1 scaffolding exists; CLAUDE.md's commands section stays empty rather than inventing invocations.
+
+
+## 9. Flight revision acceptance matrix — 2026-09-05
+
+ADR-001 is an accepted design correction, not an executed spike. Existing phase IDs and budgets remain intact. This matrix adds required evidence to their gates; numerical limits must be measured and recorded by the named gate before acceptance.
+
+| Gate | Additional required evidence | Failure prevents |
+|---|---|---|
+| S0.1 | Z-up fall/jump/vehicle axes; rebase with resting contacts and joints; two separated Earth locations; parent-relative exit velocity | Local contact architecture acceptance |
+| S0.6 | Recorded car and powered-flight inputs; bounded server/client drift; forged thrust, fuel, stage and seat requests rejected | Shared vehicle authority |
+| S0.7 | TT/UTC/provider adapters; leap boundary; wall-clock jump; restart/reconnect; coast/burn/contact/SOI transitions; one movement owner | Flight and durable trajectory schemas |
+| S0.11 | Reference orbit conservation and return residuals; model-specific deterministic replay; position/velocity tolerances with units; no blanket bitwise JS/Go claim | Numerical correctness claim |
+| Phase 7 | Staged rocket and reusable recovery configuration use the same component framework; fuel/mass/staging persistence; assisted pad landing and abort under stale clearance | Rocket completion |
+| Phase 8 | Separate lander with distinct environment envelope; lunar descent/exit; coast continues on reconnect; no gravity-axis or reference-body discontinuity | Moon completion |
+| Alpha | Duplicate stage/seat/dock commands; server restart during transactions; invalid saves and missing parents; passenger reconnect | Persistent fleet release |
+| Solar System | Orbit-only cargo craft and runway shuttle as distinct capability configurations; docking and resource transfer; landing rejects unsupported bodies | Expanded fleet release |
+
+Budgets to add as measured rows under §3 when their gates execute: local contact radius and error (S0.1), powered-flight integration/replay drift and CPU cost (S0.6/S0.7), landing envelope and collider preload lead time (Phase 7), and attachment/docking reconciliation error (Alpha). No numeric defaults from agent prose count as measurements. A release cannot claim all vehicle families merely because their definitions load.

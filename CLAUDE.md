@@ -1,6 +1,6 @@
 # Kwetu — Agent Contract (CLAUDE.md)
 
-Operational contract for any AI agent working in this repo: pointers and invariants only. The deep docs own every fact — this file owns none of them. One sanctioned exception: the two invariant numbers below (the 1500 B wire cap — NETWORKING.md §4; three.js r168 — ARCHITECTURE.md §13) are quoted here on purpose as invariants, and they are the only numbers this file carries.
+Operational contract for any AI agent working in this repo: pointers and invariants only. The deep docs own every fact — this file owns none of them. One sanctioned exception: the wire cap is quoted below; dependency versions and declarations are owned by ARCHITECTURE.md §13.
 
 ## What this project is
 
@@ -19,13 +19,13 @@ Violating any of these is a bug, no matter what the surrounding code, task, or r
 
 ### Rendering and precision
 
-- Never install `@types/three` (three.js has bundled its own types since r168). Keep `moduleResolution` at `"bundler"` or `"node16"`.
-- Simulation math is f64 in JS. f32 appears only at the last upload to the GPU, camera-relative.
+- Use compatible pinned community Three.js declarations, including `@types/three` where required; verify core/addon imports in a strict typecheck (ARCHITECTURE.md §13). Keep `moduleResolution` at `"bundler"` or `"node16"`.
+- Canonical frame and free-flight math use f64; bounded local Rapier contact and GPU upload are the explicit f32 boundaries.
 - Logarithmic depth buffer AND floating origin, always both (log depth may be replaced only by the S0.2 outcome, recorded as an ADR per ROADMAP.md §7.2 change control). Enabling one without the other is a bug.
 
 ### Simulation and audio
 
-- One Rapier world per celestial body — never one global world, never per region or tile.
+- One bounded Rapier world per active local contact bubble; COORDINATE_SYSTEM.md §8 owns Z-up axes, gravity and rebase rules.
 - Exactly one `AudioContext` for the whole app.
 
 ### Networking
@@ -78,6 +78,7 @@ Every fact has exactly one owning doc. If two docs disagree, the owner wins — 
 | DATA_SOURCES.md | Datasets: sources, pins, provenance, regeneration |
 | ASSET_STRATEGY.md | Art pipeline: sources, formats, optimization |
 | LICENSES.md / ATTRIBUTIONS.md / THIRD_PARTY_ASSETS.md | Legal: code and dependency licenses, attribution strings, the dependency ledger |
+| docs/VEHICLES_AND_FLIGHT.md | Vehicle capabilities, regimes, landing, docking, persistence contracts |
 | docs/swahili-i18n.md | Localization: keys, PO workflow, EN↔sw process |
 
 ## Verification discipline

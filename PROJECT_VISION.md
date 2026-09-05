@@ -150,11 +150,10 @@ These are non-negotiable: the tests any feature, doc, or pull request is measure
 1. **Real scale.** Planets keep their true dimensions. We do not shrink the Moon because float math
    finds it awkward; we build the precision architecture instead — double precision in JS, floating
    origins, log depth, a frame chain descending from Solar System barycenter to the metre under the
-   player's feet. Simulation scale and play scale are separated honestly: time acceleration,
-   autopilots, and transfer planning compress the *clock*, never the *geometry*. Gravity differs per
+   player's feet. Simulation scale and play scale are separated honestly: autopilots and transfer planning reduce workload while offline coast preserves elapsed travel. Isolated training may accelerate time; later fictional rapid transit changes travel capability, never geometry. Gravity differs per
    body, orbits obey ephemerides, and standing on lunar soil feels different because it is different.
 
-2. **Persistence.** The universe remembers. Where you logged out is where you log back in; the car
+2. **Persistence.** The universe remembers. Ground locations persist, while travelling craft continue along their saved journeys; the car
    you left at the ferry terminal is still there; friendships, discoveries, and ownership survive
    closed tabs, crashed servers, and weeks away. Realtime simulation state lives in memory; the
    things that constitute a life in the world are snapshotted and owned by the authoritative backend.
@@ -162,8 +161,7 @@ These are non-negotiable: the tests any feature, doc, or pull request is measure
 
 3. **One shared universe clock.** Everyone inhabits the same simulation time. The Moon is where its
    orbit says it is — for all — and "my friend is in transit, Earth → Moon" is true of a shared
-   world, not a private cutscene. Time acceleration exists, but its semantics (when physics runs,
-   when bodies ride analytic rails, how shared space stays consistent) are defined once for everyone.
+   world, not a private cutscene. Public time runs at real time. Accelerated training is isolated; it cannot change shared state. Physical coasting and optional later fictional transit follow the same shared clock.
    The sky is an honest clock: ephemeris-driven, checked against a Python oracle's golden fixtures.
 
 4. **Walk → car → rocket → orbit → Moon as one seamless camera.** The continuity principle, taken

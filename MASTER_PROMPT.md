@@ -165,7 +165,7 @@ distances. Instead:
 
 - Use a **hierarchical frame chain**: SSB → heliocentric → planet-centered inertial → planet-fixed rotating → local floating-origin
   scene (§15; canonical detail in `COORDINATE_SYSTEM.md`).
-- Use **double-precision (f64) math in JS** for world positions and **camera-relative f32 only at the last upload to the GPU**.
+- Use **double-precision (f64) math in JS** for world positions and **f32 only for bounded local contact solving and camera-relative GPU uploads**.
   WebGPU/WebGL have no f64 pipeline; float-float emulation (8–16× cost `[EXTERNAL]`) is rejected. The GPU never renders the Solar System
   in ordinary float coordinates (§13).
 - Use **floating origin** (rebase the local scene so the camera stays near zero) and **log-depth buffering**. These solve different
@@ -176,7 +176,7 @@ distances. Instead:
   interact needs expensive physics (§14, §27).
 
 Separate **simulation scale** from **gameplay time scale** (§28). Travel support, in order of introduction: real-time simulation;
-configurable time acceleration; autopilot and an orbital transfer planner; later, fictional propulsion (warp, wormholes) — but never by
+autopilot, an orbital transfer planner and offline coast; accelerated isolated training; later, explicitly fictional propulsion (warp, wormholes) — but never by
 destroying astronomical scale to reduce travel time.
 
 ## 8. Regions Catalog and Detail Tiers
@@ -287,7 +287,7 @@ Rendering rules:
 
 - **Pick GLSL `ShaderMaterial` or TSL at project start — one or the other, never mixed.** Mixed shader styles across agent-written code
   is a renderer-compatibility hazard. Record the choice as the first rendering ADR and route all custom shaders through it.
-- **Never install `@types/three`.** three.js ships its own types since r168; installing the stub package shadows them and breaks builds.
+- **Use compatible community TypeScript declarations.** Verify and pin `@types/three` against the selected Three.js release; typecheck core and addon imports. The previous bundled-types claim was incorrect (ARCHITECTURE.md §13).
 - **Log-depth buffering AND floating origin are both required** — they solve different problems (depth precision vs. coordinate
   precision). Reversed-Z with float32 depth is evaluated as an alternative within the renderer spike S0.2; if adopted, it replaces log
   depth only with an ADR.
@@ -310,7 +310,7 @@ This is the highest-risk area of the whole project. Internalize the physics of t
 - **The f32 fact:** a 32-bit float has a 24-bit significand; above 2^24 ≈ 16.7 M metres the gap between representable values exceeds 2 m
   `[EXTERNAL]`, and millimetre-level precision is lost a couple of orders of magnitude below that. Any position math done in f32 at
   planetary scale produces visible jitter.
-- **DECIDED: f64 math in JS throughout; convert to camera-relative f32 only at the final GPU upload.** Subtract large positions in f64
+- **DECIDED: f64 canonical frame and free-flight math; f32 only at local contact and GPU boundaries.** Subtract large positions in f64
   and hand small deltas downstream.
 - **DECIDED: the frame chain** (summary; canonical definitions in `COORDINATE_SYSTEM.md`): `SSB → heliocentric → planet-centered
   inertial (EQJ, ICRF-aligned) → planet-fixed rotating → local floating-origin scene`. Each frame has an explicit origin, axes, units, and owner
@@ -331,9 +331,7 @@ ships the two controllers we need out of the box:
 
 Rules:
 
-- **One Rapier world per celestial body.** Rapier's `World.gravity` is global per world and `gravityScale` only scales magnitude — you
-  cannot express per-body gravity directions inside one world. Micro-gravity environments (orbit, station interiors) run a **zero-g
-  world + manual gravity application** instead.
+- **One bounded Rapier world per active local contact bubble.** Multiple bubbles may belong to the same planet. ENU is Z-up; use (0,0,-g), or zero world gravity plus explicitly applied custom forces. COORDINATE_SYSTEM.md §8 owns rebase, bubble ownership and moving interiors.
 - **No f64 WASM bindings exist** for Rapier `[EXTERNAL]` — the engine is f32 internally. This is why floating origin is *mandatory* (§7,
   §13): keep every physics world's local coordinates small.
 - **LOD of simulation**, per the founder's fidelity tiers (§7): far objects run analytical orbital mechanics; the player's vicinity runs
@@ -354,13 +352,13 @@ The frame chain is the load-bearing abstraction that makes the continuity promis
   (COORDINATE_SYSTEM.md §1).
 - **Heliocentric frame** — the computational root where the ephemeris adapter evaluates astronomy-engine. Units: metres and seconds,
   always SI, always explicit.
-- **Planet-centered inertial frame** — derived by translation/rotation from the heliocentric frame; used for orbital mechanics.
+- **Planet-centered inertial frame** — derived by translation only from the heliocentric frame (axes remain parallel); used for orbital mechanics.
 - **Planet-fixed rotating frame** — terrain, cities, and surface features live here and rotate with the body.
 - **Local floating-origin scene** — a small, camera-near scene graph where rendering and physics actually happen; rebased whenever the
   player moves far from its origin.
 - **Shell transfer:** moving walk → car → rocket → orbit is a chain of scene "shells" handing the player between local scenes while
-  world-frame position stays continuous. The rocket ascent (Rapier → Kepler rails) handoff is a named Phase-0 design output, spike S0.7
-  — the Kerbal-style pattern is invoked but **undesigned**; do not improvise it ad hoc.
+  world-frame position stays continuous. The rocket ascent (local contact → f64 powered flight → analytic coast) handoff is a named Phase-0 design output, spike S0.7
+  — the contract is defined in COORDINATE_SYSTEM.md and docs/VEHICLES_AND_FLIGHT.md; S0.7 measures and verifies it before production implementation.
 - The world model is hierarchical and extensible — `Universe → Galaxy → StarSystem → CelestialBody → Region → SimulationZone` — with no
   code assumption that Sol is the only system (§10). Celestial bodies are **data records, not hardcoded gameplay logic**:
 
@@ -554,8 +552,7 @@ Players on the assumed 5–10 Mbps envelope (§4) make the cache a core system, 
   achievements, missions, friends, and settings persist. **Realtime simulation state stays in memory**; periodic snapshots and important
   events are persisted — never write every physics frame to PostgreSQL (founder's rule, doubly true when the database also has to
   survive a crash: match state in Nakama is in-memory only, §17, so the snapshot cadence *is* the crash-resume design).
-- **Spawn where you logged out.** The first thing a returning player sees is their last position — this single behavior is most of what
-  "persistent universe" means to a player.
+- **Resume persistent state.** Landed players resume body-fixed locations; passengers resume relative to their vehicle; coasting craft advance to current shared time. A returning traveller is not frozen at an obsolete inertial position (docs/VEHICLES_AND_FLIGHT.md §6).
 - **Server-authoritative always** for: inventory, money, teleportation, vehicle ownership, discoveries, achievements, trade, and major
   vehicle state. Clients propose; servers dispose (§29).
 
@@ -585,37 +582,19 @@ Exploration overlays on all of this: discoveries (§10) and landmarks are first-
 
 ## 26. Vehicles
 
-**One unified vehicle framework**, not N special cases:
+The full normative fleet, component schemas, movement state machine, assisted landing, docking, seat authority, persistence and acceptance tests live in [docs/VEHICLES_AND_FLIGHT.md](docs/VEHICLES_AND_FLIGHT.md). Read it before implementing any vehicle.
 
-```
-Vehicle {
-  vehicle_id, owner, position, velocity, orientation,
-  fuel, health, seats, cargo,
-  propulsion_system, control_system
-}
-```
+Support many kinds through reusable capabilities: staged launch rockets, reusable boosters, capsules, shuttles/spaceplanes, landers, exploration ships, freighters, passenger ships, tugs and probes; also cars, rovers, boats and aircraft. Each has distinct environment, propulsion, resource, seat, cargo and landing limits. Rocket, spacecraft and motion regime are not interchangeable type names.
 
-- **Types:** `GroundVehicle`, `Aircraft`, `Rocket`, `Spacecraft`, `Rover`, `Boat` — introduced in that order of priority (ground first).
-  Future/prototype types plug into the same interface.
-- **Interaction loop:** approach → open → enter → choose seat → take control → exit. Plus: own, store, damage, refuel, repair. Passenger
-  seats enable multiplayer transport from day one of vehicles (§29).
-- **Cars:** steering, acceleration, braking, suspension, collisions, headlights, ownership, multiplayer synchronization
-  (`DynamicRayCastVehicleController`, §14). Realistic enough to feel convincing — not a racing simulator (§3).
-- **Rockets are actual controllable vehicles — never a cutscene.** A player walks to the rocket, enters, sits in the cockpit, starts
-  systems, ignites, launches, leaves the atmosphere, reaches orbit. Architecture includes stages, engines, fuel tanks, thrust, mass,
-  drag, staging, guidance, landing systems, and (later) docking ports and modular rocket construction.
-- **Spacecraft:** cockpit, seats, propulsion, fuel, power, docking, landing, autopilot, navigation computer, communications, cargo,
-  ownership. Walkable interiors in large craft come later — the frame chain already supports a local scene inside a moving parent (§15).
-- Vehicle assets: Kenney Car Kit (CC0) + NASA public-domain models (insignia stripped, §33) + TRELLIS-generated parts where policy
-  allows (§34); the Swahili-coast flavor (daladala, bajaji, dhow, mashua) comes from our own CC0 kit (§35).
+Phase 4 proves ground vehicles; Phase 7 proves staged launch and recovery configurations; Phase 8 proves a separate lander. Broader fleet and walkable large interiors follow measured gates. Near-ground assisted landing is a cancellable control sequence with terrain, clearance, fuel and server checks, not a teleport. Unsupported landings explain why they are unavailable.
 
 ## 27. Orbital Rules
 
 - **Patched-conic first.** Each celestial body owns a sphere of influence with μ = GM; trajectories are conic sections patched at
   boundaries. **N-body is an optional later mode** — and before it ever touches the authoritative server it must prove deterministic
   across platforms (§51, §53).
-- **Server-side orbital state is validated, not simulated:** the Go runtime replays closed-form orbital/kinematic motion and compares
-  against client claims with drift thresholds (§29). There are **no Go Rapier bindings** — nobody is running "server physics".
+- **Server-side orbital state follows the accepted validation model:** the Go runtime replays analytic coast and bounded numerical powered-flight motion and compares
+  against client claims with drift thresholds (§29). The baseline excludes a server Rapier contact solver as an architectural choice; it does not prohibit numerical flight validation in Go.
 - **Atmospheric flight and entry** are progressive, not a loading screen: density/pressure/ temperature from the body's atmosphere
   record (§15); drag, entry heating approximation, aerodynamic forces, parachutes, and landing at gameplay fidelity (§14, §26).
 - **SOI handoff** between patched conics and local physics (and rails-mode transitions, §28) is the **named spike S0.7 deliverable** —
@@ -623,18 +602,11 @@ Vehicle {
 - Accuracy expectation discipline: astronomy-engine gives sky-quality positions (§16); anything that must *land* uses our own f64
   propagation validated against the Python oracle (§46).
 
-## 28. Time-Warp Semantics
+## 28. Time and travel semantics
 
-- **Two-mode travel:** below a defined threshold, motion is full Rapier physics at fixed timestep with client interpolation; above it,
-  craft ride **"rails"** — analytic Kepler propagation (`M = M0 + n·t`) on kinematic bodies. The threshold value and the handoff
-  behavior are spike S0.7 outputs `[PLACEHOLDER — gate: S0.7]`.
-- **The universe clock is shared** (§16): warp happens in simulated time. All players' universes advance the same clock; what one
-  player's warp does to *their* craft, and how it appears to a co-located observer, is exactly the S0.7 design question. Do not ship
-  ad-hoc per-player time.
-- **TT vs UTC leap-second policy is part of the same spike** (§16) and gates the world-state schema — a timestamp format that ignores
-  leap seconds will silently drift ephemeris accuracy.
-- Real-time is the default experience; time acceleration, autopilot, and a transfer planner make the Solar System playable without FTL
-  (§7). Warp, wormholes, and exotic propulsion are later, fictional, and explicitly framed in-fiction (§10).
+The public universe has one server-owned real-time clock, using the TT epoch contract in COORDINATE_SYSTEM.md §4. Autopilot and offline coasting retain physical travel duration. Accelerated time is restricted to isolated training/test universes with no state export. Later fictional propulsion provides explicitly labelled rapid travel without shrinking geometry or changing the public clock.
+
+Movement uses CONTACT_LOCAL, FLIGHT_DYNAMIC, ORBIT_COAST, ATTACHED and optional TRANSIT_FICTIONAL (docs/VEHICLES_AND_FLIGHT.md). Engine burns and atmosphere require numerical flight integration; analytic coast is unpowered. The choice is based on physical conditions, not a speed or warp threshold. S0.7 verifies the chosen clock, regime transitions and SOI continuity; it does not reopen product semantics implicitly.
 
 ## 29. The Multiplayer Model
 
@@ -655,10 +627,9 @@ Vehicle {
     (`CLAUDE.md`).
 - **Authoritative model:** Go match handlers own game truth. The full Nakama callback list
   (`MatchInit/JoinAttempt/Join/Leave/Loop/Terminate/Signal`) is documented in `NETWORKING.md`; the TS runtime is RPC glue only (§17).
-- **Server validation = closed-form replay:** the validator re-integrates a client's claimed path with the same kinematic/orbital model
+- **Server validation = versioned movement replay:** the validator re-integrates a client's claimed path with the same coast, powered-flight or contact-kinematic model
   and rejects or corrects on drift beyond threshold (§27). The validation contract is the S0.6 deliverable: record a real car path,
-  replay it, measure the drift, write the contract. **Docs must not promise "server-authoritative physics" — there is no server
-  physics.**
+  replay it, measure the drift, write the contract. **The baseline validates numerical flight but does not run a full server contact solver.**
 - **Client prediction where appropriate:** local prediction + reconciliation for the avatar and the driven vehicle; interpolation for
   everyone else. Design patterns are linked (Gaffer on Games — **link only, never reproduce text**, §43); the implementation is ours.
 - **Reconnect is a feature:** Caddy reloads, mobile networks hiccup, laptops sleep — mid-session reconnect must recover position and
@@ -918,8 +889,8 @@ commit cleanly.
 
 Hard conventions (mirror of `CLAUDE.md`'s invariants — it is the ≤150-line operational contract and this is the rationale):
 
-- TypeScript strict; no `@types/three` (§12); f64-in-JS / camera-relative f32 at upload (§13); log depth AND floating origin (§12); one
-  `AudioContext` (§18); ≤1500 B wire messages (§29); one Rapier world per body (§14); no dependency without a ledger row (§23); never
+- TypeScript strict; compatible pinned Three.js declarations (§12); f64-in-JS / camera-relative f32 at upload (§13); log depth AND floating origin (§12); one
+  `AudioContext` (§18); ≤1500 B wire messages (§29); one Rapier world per active local contact bubble (§14); no dependency without a ledger row (§23); never
   copy GPL/AGPL/NC/ND code or assets (§43); never reproduce Gaffer on Games text (§43); never strip Apache-2.0/NOTICE headers (§44);
   never commit an unregenerable or unledgered file to `data/` (§42).
 - Strings land EN+sw in the same change (§38). Data-driven definitions over hardcoded logic — celestial bodies, vehicles, and regions
@@ -1029,7 +1000,7 @@ budgets live in `ROADMAP.md` (§50). Every exit criterion is **browser-testable 
 - **Phase 5 — Multiplayer.** Two browsers see each other interpolated; unvalidated positions are rejected with measured drift; reconnect
   recovers.
 - **Phase 6 — Voice.** Proximity voice behind CGNAT: positional hearing, TURN-forced connection succeeds, server mute is not bypassable.
-- **Phase 7 — Rocket.** Launch from the Dar-coast pad; Rapier→Kepler handoff without visible discontinuity; ephemeris matches the oracle
+- **Phase 7 — Rocket.** Launch from the Dar-coast pad; powered-flight→coast handoff without visible discontinuity; ephemeris matches the oracle
   fixtures.
 - **Phase 8 — Orbit & Moon.** Lunar orbit → descent → walk at real scale; Earth-in-sky correct.
 - **Vertical slice.** A fresh browser does pad → walk → drive → launch → orbit → lunar landing alongside another player, with voice, in

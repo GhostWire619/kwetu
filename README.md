@@ -37,6 +37,10 @@ marketing number.
 | [docs/adr/README.md](docs/adr/README.md) | Architecture decision records — the Phase-0 spike outputs land here |
 | [data/README.md](data/README.md) | The rules of the separately-licensed ODbL `data/` layer |
 
+## Flight and fleet specification
+
+[Vehicles and flight](docs/VEHICLES_AND_FLIGHT.md) defines the component-based fleet, powered flight, orbital coast, boarding, docking, assisted landing, persistence and acceptance tests. [ADR-001](docs/adr/ADR-001-flight-frames-and-clock.md) records the researched corrections to coordinates, local physics, shared time and Three.js typing. These are accepted design choices; browser measurements remain outstanding.
+
 ## Running it
 
 Nothing to run yet — there is no code. When the first runnable code lands (after Phase 0),

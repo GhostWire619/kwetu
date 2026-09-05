@@ -15,10 +15,9 @@ rounding.
 Everything stated as a **Law** is the spec, copied verbatim into implementations. If code, a
 shader, or a network message contradicts a Law, the code is wrong.
 
-## 1. The six frames, plus the local scene
+## 1. Canonical frames and the local scene
 
-Every position in Kwetu exists in exactly one frame at a time, and every change of frame goes
-through a named conversion owned by exactly one subsystem. There are no other frames.
+Every position carries exactly one frame identifier. Named conversions own each frame change. Surface scenes use ENU; spacecraft interior scenes additionally use Frame.VehicleLocal(vehicleId), defined below. New frame kinds require an ADR.
 
 | Frame | Origin | Axes | Units | Conversion owner |
 |---|---|---|---|---|
@@ -28,7 +27,8 @@ through a named conversion owned by exactly one subsystem. There are no other fr
 | `Frame.PlanetFixed(body)` | center of the body | body-fixed rotating: Earth = ITRF-like (x → 0°E/equator, z → north pole); other bodies = IAU north pole + prime meridian | metres | **`toPlanetFixed`** — one f64 rotation per (body, tick), composed in sim core |
 | `Frame.Geodetic(body)` | the body's reference ellipsoid (Earth: WGS84) | lat / lon / height | degrees + metres | **Earth-fixed geodesy module** (GeographicLib candidate — §5, spike) |
 | `Frame.Enu(anchor)` | an anchor point on the body | tangent triad: x East, y North, z Up | metres | **Earth-fixed geodesy module** (Earth) / planet-fixed tangent (other bodies) |
-| `LocalScene` | the scene anchor (`SceneAnchor`) | **identical axes to `Frame.Enu(anchor)`** | metres; f32 only at the two downcast points (§6, Laws P-2/P-5) | **scene layer** (`LocalScene.rebase`), renderer (downcast) |
+| `Frame.VehicleLocal(vehicleId)` | vehicle centre of mass | right-handed vehicle axes: +X right, +Y forward, +Z up | metres | attachment/frame adapter, including parent velocity and angular transport |
+| `LocalScene` | the scene anchor (`SceneAnchor`) | **identical axes to its ENU or vehicle-local anchor** | metres; f32 only at local contact and render boundaries (§6) | **scene layer** (`LocalScene.rebase`), renderer (downcast) |
 
 The chain, one arrow per conversion:
 
@@ -64,7 +64,7 @@ Why each hop is shaped the way it is:
   WGS84 (§5). Other bodies get their own ellipsoid/sphere constants from their data sources
   (owned by `DATA_SOURCES.md`), same math, different constants.
 - **`LocalScene`** is the only frame the renderer and Rapier ever see, and its axes are the
-  anchor's ENU triad — which is why gravity inside a surface scene is exactly `(0, −g, 0)` and
+  anchor's ENU triad — which is why the tangent approximation to gravity inside a surface scene is `(0, 0, −g)` and
   "up" is +z. Free-space scenes use the same convention with a scene-defined "up".
 
 ### Deliberate omissions (quantified, so nobody "fixes" them by accident)
@@ -107,41 +107,17 @@ sees AU. Do **not** substitute the exact IAU 2012 definition (1 au = 149 597 870
 [MEASURED 2026-09-05]. Golden fixtures must use the same constant as the runtime, or the
 fixtures are wrong by metres.
 
-## 4. Time: the TT vs UTC question (OPEN — gates NETWORKING.md and world state)
+## 4. Authoritative time contract
 
-This is a Phase-0 deliverable owned by spike **S0.7** (universe-clock / time-warp semantics).
-Until its ADR lands, NETWORKING.md cannot fix its message-timestamp format and the
-world-state schema cannot fix its persistence format. This section presents the question and
-the options honestly; it does **not** decide. Facts that constrain the choice:
+Accepted design baseline: worldTime is TT seconds since J2000 TT (2000-01-01 12:00:00 TT). This is a simulation instant, not a JavaScript Date. The server advances it from a monotonic process clock, anchored to a persisted world epoch. Public shared space uses rate = 1. S0.7 verifies implementation and outage handling; it no longer chooses between contradictory public clock models.
 
-- **JS `Date` is POSIX time, not UTC.** It counts 86400 s per day and ignores leap seconds;
-  a real UTC second 23:59:60 does not exist in `Date`, and each leap second widens the POSIX
-  drift from civil time [EXTERNAL — ECMAScript spec].
-- **True TT − UTC = TAI−UTC + 32.184 s = 37 + 32.184 = 69.184 s** today [EXTERNAL — IERS
-  Bulletin C; re-verify the 37 s leap count at pin time].
-- **astronomy-engine's own `.tt` is not that number.** For the worked-example instant
-  (2026-09-05T00:00:00Z) it exposes `.ut = 9743.5 d`, `.tt = 9743.500873473704 d` — a ΔT
-  model of 75.47 s [MEASURED 2026-09-05, astronomy-engine 2.1.19]. The library's internal
-  scale is self-consistent for ephemeris purposes, but it is **not** a policy; never treat a library timestamp as the universe clock.
-- **Leap seconds are non-monotonic.** A clock that repeats a second breaks fixed-timestep
-  accumulators, interpolation, and server replay — why physics never runs on civil time.
-- **The leap second itself is being retired:** the CGPM resolved (2022) that leap seconds
-  should cease by 2035, successor mechanism still undefined [EXTERNAL]; until then Bulletin C remains live.
+Persist {clockRevision, worldTimeTtSeconds, savedAtUtc, leapTableRevision, timeAdapterRevision}. Network snapshots carry clockRevision, tick and worldTimeTtSeconds; a reconnect receives a fresh mapping. Within a process, wall-clock corrections must not change elapsed simulation time. After restart, compute elapsed civil downtime with the pinned conversion policy, refuse negative jumps, and record any administrative correction with a new clock revision. Clients smooth clock estimates; they cannot change authority time.
 
-Options for the authoritative universe/world-state clock:
+TT = TAI + 32.184 seconds. UTC conversion requires a versioned leap-second table; TDB and TT are distinct and SPICE ET uses TDB. The ephemeris adapter converts explicitly for each provider. Do not pass TT seconds as a UTC Date or treat astronomy-engine's delta-T model as the authoritative clock. [NASA NAIF time reference](https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/req/time.html), checked 2026-09-05.
 
-| Option | Monotonic | Pros | Cons |
-|---|---|---|---|
-| POSIX seconds (JS `Date`) | yes | native to JS, trivially serialisable | drifts from civil UTC by the leap count; ambiguous instants; physics semantics silently wrong across a leap |
-| UTC + leap table | no | civil truth everywhere | non-monotonic (repeats a second); every client/server needs a table-update path |
-| TAI seconds since epoch | yes | uniform, no leaps; civil mapping = TAI + 37 s (changes only at leaps) | needs the Bulletin C count at display boundaries |
-| TT seconds since J2000 | yes | ephemeris-native (astronomy-engine, Skyfield all speak TT); 32.184 s offset exact by definition | not civil time; library ΔT models differ (measured above) — must pin construction path |
+JavaScript Date does not represent leap-second labels ([ECMAScript time values](https://tc39.es/ecma262/multipage/numbers-and-dates.html#sec-time-values-and-time-range), checked 2026-09-05). It is not a monotonic elapsed-time clock, and ordinary POSIX timestamps do not accumulate the leap count as a civil-date display error. UTC can uniquely label an inserted second; describing UTC itself as necessarily repeating a second was incorrect. Tests cover leap boundaries, wall-clock adjustments, reconnect and restart; library adapters and supported date ranges are pinned before the first save schema ships.
 
-Working recommendation, to be ratified or rejected by the S0.7 ADR: **one monotonic scale
-(TT- or TAI-based — S0.7 chooses) as the authoritative simulation and world-state clock**, civil
-UTC derived only at display/logging boundaries, network timestamps in the monotonic scale plus a
-server-published mapping to civil UTC. Rails orbit math (`M = M0 + n·t`, §9) requires it — a leap
-second inside a time-warp interpolation is a discontinuity in every moving body at once.
+Public travel never advances other players' clocks. Autopilot and offline coasting retain physical duration. Isolated training/test universes may accelerate time but cannot export persistent state. Fictional rapid transit is a separate trajectory mode, not private time acceleration; see [vehicles and flight](docs/VEHICLES_AND_FLIGHT.md).
 
 ## 5. Earth-fixed geodesy
 
@@ -204,9 +180,7 @@ coordinates + the geodetic model version that defined them.
 
 ## 6. Precision rules — the law
 
-**Law P-1. All simulation and frame math is f64 (the JS `number`).** `Float32Array` may not
-appear in any frame-conversion, orbit, or physics-integration code path. Type boundaries
-enforce this (§11, G-04).
+**Law P-1. Canonical state, frame conversions and free-flight integration use f64.** The explicitly bounded Rapier contact solver uses f32 locally; this is the only simulation precision exception. Its results are promoted and transformed to canonical f64 state at tick boundaries, without claiming lost precision is recovered. Float32Array is forbidden in canonical frame/orbit integration paths. G-04 tests both boundaries.
 
 **Law P-2. The GPU never sees a global coordinate.** WGSL/WebGPU has no f64 [EXTERNAL —
 WebGPU/WGSL spec]; the renderer receives only `LocalScene`-local deltas already inside the
@@ -223,7 +197,7 @@ in the Solar System — its resolution at 1 AU is ~30 µm, at Earth radius ~1 nm
 Range only becomes marginal at interstellar distances (~8 m at 4 ly), which is why
 `Frame.Universe` is a reserved root and not today's working frame.
 
-**Law P-5. Every rendered local scene stays under ~1e5–1e6 m across its largest extent.** A
+**Law P-5. Every rendered local scene stays under ~1e5–1e6 m across its largest extent for rendering only; contact bubbles require a separate, tighter measured bound.** A
 planet seen from space is drawn by its own planet renderer, never inside a walk-scale scene.
 The scene bound is asserted in code, not hoped for. Rationale (f32 spacing at the scene's far
 edge): ~8 mm at 100 km, ~6 cm at 1000 km; beyond that it degrades fast (table below).
@@ -271,45 +245,27 @@ which is not negotiable.
 
 ## 8. Physics world layout
 
-**Law PH-1. One Rapier world per celestial body. Never one global world, never per region or
-tile.** Rationale: Rapier's `World.gravity` is a single global vector per world, and
-`gravityScale` scales magnitude only — it can never change direction [EXTERNAL — Rapier
-documentation]. A world cannot have per-position gravity direction, so a world cannot span
-bodies, latitudes, or a planet's curved surface.
+**Law PH-1. One Rapier world per active local contact bubble, not per planet or terrain tile.** A bubble is a bounded interaction neighbourhood with one anchor, one solver owner and a set of entities. A client normally simulates its nearby bubble; remote players are interpolated proxies. Widely separated locations on Earth may use independent bubbles. Terrain tiles stream colliders into a bubble and do not create worlds of their own. Bubble IDs are runtime identities, never persistent body IDs.
 
-| Regime | World | Gravity |
-|---|---|---|
-| On/near a body's surface (walk, drive, landed) | that body's world, in `LocalScene` coordinates | `(0, −g, 0)` — axis-aligned because scene axes are ENU; magnitude from normal gravity (standard 9.80665 until the geodesy spike supplies site values) [PLACEHOLDER — gate: S0.1 geodesy ADR] |
-| Micro-g (EVA, station interiors, asteroid) | a zero-g world | `(0,0,0)`; artificial gravity applied manually as forces |
-| Spacecraft in flight | **no world** — rails (§9) | n/a; contact exists only inside a body's world when landed/docked |
+Surface anchors are ENU: +X east, +Y north, +Z up; tangent gravity is (0,0,-g). Explicitly configure character-controller up, vehicle axes, camera up and imported asset basis conversions. Three.js asset defaults must not silently redefine ENU. A planet renderer is separate from local contact geometry.
 
-Rapier is f32 [EXTERNAL — Rapier WASM bindings; no f64]. The physics world therefore lives
-entirely inside `LocalScene` (Laws P-2/P-5), rebase follows Law P-6, and bodies whose motion
-is ephemeris/orbital are **kinematic position-based bodies** driven from f64 evaluation each
-tick — Rapier never integrates an orbit. Fixed-timestep accumulator with render
-interpolation: physics steps a fixed `dt` (candidate 1/60 s) [PLACEHOLDER — gate: S0.7], an
-accumulator carries the remainder, render interpolates between the last two states, and a
-substep clamp prevents the spiral of death.
+Rapier supports custom forces; world gravity does not prohibit position-dependent gravity. Set world gravity to zero when applying a spatial gravity field and apply mass × acceleration exactly once per dynamic body. Kinematic avatars need explicitly integrated desired movement. See [Rapier gravity](https://rapier.rs/docs/user_guides/javascript/rigid_body_gravity/) and [custom forces](https://rapier.rs/docs/user_guides/javascript/rigid_body_forces_and_impulses/), checked 2026-09-05. Local worlds are chosen for precision and bounded work, not an alleged gravity limitation.
 
-## 9. Rails vs physics: two-mode time-warp
+Within a small surface bubble a tangent normal-gravity approximation is permitted, with its error measured by S0.1. Powered flight uses central/body gravity in an inertial frame. Rotating local frames require transport velocity and, when integrating dynamics there, Coriolis, centrifugal and angular-acceleration terms or an explicitly measured small-bubble approximation. Do not apply central gravity plus normal gravity twice.
 
-Two modes, one threshold [PLACEHOLDER — gate: S0.7 sets the threshold and hysteresis]:
+Rebase all bodies, velocities, orientations, joint anchors and pending targets from canonical state at a tick boundary; a changed ENU anchor rotates axes as well as translating them. Rebuild/update contact caches coherently. No joint may span two independent solvers. Keep interacting groups together during bubble merge/split; transfer ownership atomically with a revision and preserve attachments. S0.1 must measure contact stability, not just camera jitter. Active bubble extent, merge margins and workload limits remain ROADMAP measurements.
 
-- **Physics mode (below threshold).** Rapier steps normally (§8). Real accelerations, real
-  collisions, character/vehicle feel.
-- **Rails mode (above threshold).** Local physics freezes — dynamic bodies paused/kinematic —
-  and all orbital motion is evaluated analytically from Keplerian elements in f64:
-  **`M = M0 + n·t`** (mean anomaly grows linearly in the monotonic universe time), solve
-  Kepler's equation for the true anomaly, position in `Frame.Pci(body)` from the elements.
-  Time-warp then advances the universe clock by arbitrary amounts without integrating anything.
+Moving interiors use Frame.VehicleLocal and include parent velocity plus angularVelocity × offset on exit. CONTACT_LOCAL is a gameplay contact solver; it never integrates planetary orbits. See [vehicle regimes](docs/VEHICLES_AND_FLIGHT.md#3-exactly-one-movement-owner).
 
-**SOI handoff = named Phase-0 spike S0.7.** When a rails trajectory crosses a body's sphere of
-influence, the reference body changes and position/velocity are re-expressed in the new
-`Frame.Pci(body)` (the frames differ by the translation between body centers — Law V-1's
-transport term is why velocity needs care here). Kerbal Space Program's patched-conic handoff
-is invoked as prior art for the *pattern* only; it is not designed here, and nothing in this doc
-is the handoff design. Mode transitions never occur mid-physics-step, and an R→P transition
-re-syncs all frozen bodies from f64 ground truth before control returns.
+## 9. Powered flight, coast and contact transitions
+
+The movement state machine is CONTACT_LOCAL, FLIGHT_DYNAMIC, ORBIT_COAST, ATTACHED and optional later TRANSIT_FICTIONAL. [VEHICLES_AND_FLIGHT.md](docs/VEHICLES_AND_FLIGHT.md) owns entry/exit rules. Regime choice is independent of clock rate and speed alone.
+
+FLIGHT_DYNAMIC numerically integrates f64 forces for ascent, engine burns, drag, entry and descent. ORBIT_COAST analytically evaluates an unpowered two-body conic; it is invalid during significant thrust or atmosphere. CONTACT_LOCAL owns nearby contact in bounded f32 Rapier coordinates. A craft always has one movement owner. Matching local forces continue during contact ownership; never add the result of a second flight integrator.
+
+For a coast orbit, evaluate mean anomaly from epoch and mean motion, solve the appropriate elliptic or hyperbolic equation, and handle near-parabolic trajectories with a robust universal-variable or equivalent solver. M = M0 + n*t alone is not a complete propagator. Bound event steps at burns, collision sweeps and sphere-of-influence crossings. Celestial ephemerides remain independent of spacecraft conics.
+
+SOI transfer between parallel inertial frames subtracts both new-body position and velocity at the same instant; it introduces no rotating transport term unless axes actually rotate. Rotating conversions use omega cross r under V-1. Transfer state, resources and control authority at a tick boundary, recompute conic elements and verify continuity. S0.7 and Phase 7 measure tolerances/hysteresis and validate handoffs; the accepted design is recorded in ADR-001.
 
 ## 10. Accuracy expectations
 
@@ -371,8 +327,7 @@ displayed rounded].
 f32 downcast of the heliocentric coordinates yields a geocentric position in error by
 **12 636 m** [MEASURED 2026-09-05 — f32 ULP is 16 384 m at this magnitude]. Storing the step-1
 planet-fixed coordinates themselves in f32 quantises the site by **0.227 m** — that error *is*
-the vertex jitter floating origin exists to kill. f64 end-to-end, f32 only after the last
-subtraction, is not a style preference.
+the vertex jitter floating origin exists to kill. Canonical f64 with local contact/render f32 after subtraction is a correctness boundary.
 
 ## 13. Naming conventions
 
@@ -380,11 +335,11 @@ Future code copies this vocabulary verbatim. Identical words mean identical fram
 
 | Name | Meaning |
 |---|---|
-| `Frame` | The frame registry/enum: `Frame.Universe`, `Frame.Helio`, `Frame.Pci(body)`, `Frame.PlanetFixed(body)`, `Frame.Geodetic(body)`, `Frame.Enu(anchor)` |
+| `Frame` | The frame registry/enum: `Frame.Universe`, `Frame.Helio`, `Frame.Pci(body)`, `Frame.PlanetFixed(body)`, `Frame.Geodetic(body)`, `Frame.Enu(anchor)`, `Frame.VehicleLocal(vehicleId)` |
 | `toPlanetFixed(pos, body, t)` | Rotation into a body-fixed frame (required name — the only rotating hop) |
 | `toHelio`, `toPci`, `toGeodetic`, `toEnu` | The other conversions, same verb style, one per chain arrow |
 | `LocalScene` | The floating-origin scene: owns its `SceneAnchor`, the rebase, and the two f32 downcast points |
-| `SceneAnchor` | A geodetic/ENU anchor + the instant it was fixed; what `LocalScene` is relative to |
+| `SceneAnchor` | A typed ENU or vehicle-local anchor, its parent ID and reference instant; what `LocalScene` is relative to |
 | `worldTime` | The authoritative monotonic simulation instant (§4) |
 
 Rules:
@@ -402,8 +357,8 @@ Rules:
 
 | Item | Owner | Blocks |
 |---|---|---|
-| TT vs UTC (universe clock) policy | S0.7 ADR | NETWORKING.md timestamps, world-state/persistence schema |
+| Time adapter, leap-table pin and restart proof (TT policy accepted) | S0.7; ADR-001 | timestamp/save implementation |
 | GeographicLib (or bake-only) adoption + geoid grid cost | named spike within S0.1 ADR | terrain datum conversion (DATA_SOURCES.md), per-site gravity (§8) |
 | reversed-Z + float32 vs log depth mechanism | S0.2 ADR | renderer depth strategy (floating origin is not open) |
-| Rails threshold, hysteresis, SOI handoff design | S0.7 ADR | Phase 7 rocket, time-warp UX |
+| Movement-regime tolerances, hysteresis, SOI implementation | S0.7 measurements, ADR-001 baseline | Phase 7 flight |
 | Fixture tolerances (G-01…G-05) | S0.1 / S0.11 ADRs | CI gate |

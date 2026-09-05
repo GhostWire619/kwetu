@@ -240,7 +240,8 @@ word, the proposal keeps it rather than inventing a calque.
 | bajaji | bajaji | Already Swahili (three-wheeler). |
 | baraza | baraza | Already Swahili (veranda / council bench) — in-game social space. |
 | orbit | mduara | Noun; the verb "kuzunguka" covers orbiting as an action. |
-| time-warp | kupita muda | "Skip time"; KEEP-EN candidate if used as a feature name. |
+| training time acceleration | kuongeza kasi ya muda | Draft: isolated training only; native review required. |
+| fictional rapid transit | safari ya kasi ya kubuni | Draft: separate key from clock acceleration; native review required. |
 | region | eneo / mkoa | "eneo" general; "mkoa" if the real Tanzanian admin regions are meant — review decides per context. |
 | map | ramani | Standard. |
 | account | akaunti | Standard loanword. |

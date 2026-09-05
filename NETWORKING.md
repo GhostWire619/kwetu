@@ -20,8 +20,7 @@ those numbers. Evidence tags (`[MEASURED]` / `[EXTERNAL]` /
 4. **Match handlers live in the Go runtime.** The TypeScript runtime is
    ES5, single-threaded, no-WASM RPC glue and can never carry
    simulation (§5).
-5. **The universe clock is server-owned** (§8); time semantics are the
-   open S0.7 gate.
+5. **The universe clock is server-owned** (§8); time policy is fixed in §8; S0.7 verifies it.
 6. **Voice is push-to-talk by default** — a product decision forced by
    Chromium's echo-cancellation gap (§11).
 7. **No capacity promises.** Kwetu is, through Phase 2, a single
@@ -177,21 +176,18 @@ Operating rules:
   authority (§10). Everything with a physics or tick requirement lives
   in Go.
 
-## 6. Server validation: kinematic/analytic replay, not physics
+## 6. Server validation: movement replay and contact boundaries
 
-The server validates by **kinematic/analytic replay**: client-reported
-positions are reconciled against closed-form models — orbital elements
-propagated analytically, vehicles integrated along known equations of
-motion — with **drift thresholds** defining when a client's claim is
+The server validates by **versioned movement replay**: client-reported
+positions are reconciled against analytic coast, numerical powered flight and sanctioned contact kinematics — with **drift thresholds** defining when a client's claim is
 rejected, snapped, or flagged. The validator contract (which models,
 which thresholds, which actions) is **S0.6's deliverable** in
 `ROADMAP.md`; this section only fixes the boundaries.
 
-What the server **cannot** do, stated explicitly so no later doc
+What the current architecture **does not** do, stated explicitly so no later doc
 promises it:
 
-- **No Rapier in the Go runtime.** There is no WASM, no arbitrary native
-  physics engine, no collision solver in the authoritative path.
+- **No server Rapier in this design.** The authoritative path uses the validation models in §8; this is a project boundary, not a claim that Go cannot host simulation.
 - Therefore **contact resolution, collisions, ragdolls, and any
   emergent-physics outcome are client-side visual/behavioral systems**,
   not server truth. The server owns *intent and trajectory* (where you
@@ -221,36 +217,23 @@ Kwetu's shape, in one line each:
   East-African RTTs.
 - **Server reconciliation**: the server's validated result of that input
   arrives later; the client rewinds and replays unacknowledged inputs on
-  top of it. Local kinematics come from the same closed-form models the
+  top of it. Local kinematics come from the same versioned movement models the
   server replays (§6), so reconciliation converges instead of fighting.
 - **Snapshot interpolation buffers** for everything else (links above):
   a render delay of a few ticks buys smoothness through loss. Buffer
   depth is a §Budgets number (`[PLACEHOLDER — gate]`).
 
-## 8. Shared-world time semantics — OPEN (S0.7)
+## 8. Shared-world time and trajectory contract
 
-This section is a gate, not a decision. **S0.7** in `ROADMAP.md` owns
-it; its outcome becomes an ADR (`docs/adr/`).
+Accepted baseline: one server-owned, real-time public universe clock. Canonical TT epoch, civil conversion, reconnect and restart rules are owned by [COORDINATE_SYSTEM.md](COORDINATE_SYSTEM.md#4-authoritative-time-contract). Clients receive revisioned snapshots; they cannot request a private time jump. Isolated accelerated test/training sessions cannot merge persistent entities or discoveries into public space.
 
-Fixed already: **the universe clock authority is server-owned.** Clients
-receive epoch-anchored time and render through it; no client ever
-advances shared time, or two players' skies disagree.
+Coasting continues against shared time, including offline. Autopilot does not shorten a physical transfer. Optional fictional fast transit uses a server-owned route and arrival event at the same shared clock, with body exclusion volumes and a safe moving destination. It is not a conic or a clock offset.
 
-Open for S0.7 to settle:
+Vehicle commands include request ID, entity ID, expected authority revision, input sequence and tick. Server events for staging, boarding, docking and landing are idempotent and durable before acknowledging consequential completion. Resource and seat changes share the same transaction as the associated attachment change. Compact state includes frame ID, movement regime and model revision, never untagged position arrays.
 
-- **Whether time-warp is permitted in shared space, and how.** A
-  persistent universe wants time acceleration (a trip that "takes
-  days"). But two players standing next to each other must share one
-  rate of time. Options on the table: shared timelines with scripted
-  fast-forward windows; per-observer time that must reconcile when
-  players meet; time-warped pockets (instanced travel) that rejoin
-  shared time. Each has different interpolation/reconciliation
-  consequences (§7).
-- **TT vs UTC policy.** Real-scale orbital propagation is naturally done
-  on a uniform timescale (TT-style, no leap seconds), while human-facing
-  clocks want UTC/local and the Swahili calendar is a first-class UI
-  concern. S0.7 decides the canonical server timescale, the conversion
-  points, and where leap-second/ΔT policy lives.
+Validation distinguishes coast (analytic propagation), powered flight (bounded numerical replay of versioned thrust/drag/gravity), and contact (sanctioned kinematics plus swept occupancy checks). A client-only crash cannot award money, destroy another player's craft or move an authoritative obstacle. Full server Rapier is excluded by the current architecture choice, not by a universal Go limitation. S0.6 must measure acceptance/rejection error and adversarial cases before shared vehicles ship.
+
+S0.7 now proves the chosen clock policy, conversions and handoffs. See [ADR-001](docs/adr/ADR-001-flight-frames-and-clock.md) and [vehicle persistence](docs/VEHICLES_AND_FLIGHT.md#6-authority-saving-and-disconnected-travel).
 
 ## 9. Interest management (AoI) — no capacity promises
 
@@ -420,7 +403,7 @@ TURN cost) and publishing-failure rate.
 |---|---|---|
 | WebRTC datachannel transport: adopt or reject | Later measured spike (S0.13+, appended per ROADMAP.md §7.4) → §Budgets | ADR |
 | Validator contract: models, drift thresholds, actions | **S0.6** | ADR |
-| Universe clock: time-warp policy, TT/UTC policy | **S0.7** | ADR |
+| Clock/restart and movement-handoff verification (policy in ADR-001) | **S0.7** | ADR |
 | AoI cell size, priorities, per-node presences | Measured spike → §Budgets | ADR |
 | LiveKit client pin: `setWebAudioPlugins` (`@experimental`), shared `AudioContext` option names | Implementation pin | ADR |
 | `@heroiclabs/nakama-js` 2.8.0 drift vs. pinned server | Ongoing, at each server upgrade | ADR on any fork |
