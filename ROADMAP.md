@@ -89,14 +89,14 @@ measured.
 
 | ID | Package / quantity | gzip transfer | Tag |
 |---|---|---|---|
-| B-LOAD-01 | three.js core build | — | [PLACEHOLDER — gate: S0.3] |
-| B-LOAD-02 | Rapier WASM (deterministic compat build — package split recorded in ARCHITECTURE.md §13) | — | [PLACEHOLDER — gate: S0.3] |
+| B-LOAD-01 | three.js core build | 126,438 B | [MEASURED 2026-09-05, tools/spikes/s0.3/measure.mjs — vite 8.2.2 (rolldown/oxc) minified prod import, zlib gzipSync level 9] |
+| B-LOAD-02 | Rapier WASM (deterministic compat build — package split recorded in ARCHITECTURE.md §13) | 1,088,335 B as the compat build ships (WASM base64-inlined); standalone .wasm reference 772,479 B (not additive; inlining costs ≈ 316 KB gzip) — shipping config is an open Phase-1 ADR | [MEASURED 2026-09-05, tools/spikes/s0.3/measure.mjs] |
 | B-LOAD-03 | nakama-js | — | [PLACEHOLDER — gate: S0.3] |
 | B-LOAD-04 | livekit-client | — | [PLACEHOLDER — gate: S0.3] |
 | B-LOAD-05 | KTX2 / Basis transcoder (WASM + JS) | — | [PLACEHOLDER — gate: S0.3] |
 | B-LOAD-06 | meshopt decoder (WASM + JS) | — | [PLACEHOLDER — gate: S0.3] |
-| B-LOAD-07 | App shell (app TS + CSS, excluding all of the above) | — | [PLACEHOLDER — gate: S0.3] |
-| B-LOAD-08 | One locale bundle (EN or sw JSON; locales load lazily per docs/swahili-i18n.md) | — | [PLACEHOLDER — gate: S0.3] |
+| B-LOAD-07 | App shell (app TS + CSS, excluding all of the above) | 1,249,242 B as probed — includes astronomy-engine (19,257 B) and i18next (13,568 B), whose row placement is an open S0.3 decision; strict exclusive figure pending | [PLACEHOLDER — gate: S0.3 — partial 2026-09-05, tools/spikes/s0.3/measure.mjs] |
+| B-LOAD-08 | One locale bundle (EN or sw JSON; locales load lazily per docs/swahili-i18n.md) | — (probe fixture existed; per-locale production bundle pending a real locale build) | [PLACEHOLDER — gate: S0.3] |
 | B-LOAD-09 | **Total first-visit transfer** (sum of B-LOAD-01…08) | — | [PLACEHOLDER — gate: S0.3] |
 | B-LOAD-10 | Warm re-visit transfer (Cache API / IndexedDB hit, `navigator.storage.persist()` granted) | — | [PLACEHOLDER — gate: S0.3] |
 
@@ -188,10 +188,21 @@ record: the pinned Geofabrik Tanzania pbf timestamp each bake used.
 
 | ID | Quantity (unit) | Value | Tag |
 |---|---|---|---|
-| B-PREC-01 | Max observed positional jitter at a 1e7 m origin offset (m) | — | [PLACEHOLDER — gate: S0.1] |
-| B-PREC-02 | Rendered-scene distance-from-origin ceiling (m) — verified f64/f32 boundary from S0.1 | — | [PLACEHOLDER — gate: S0.1] |
+| B-PREC-01 | Max observed positional jitter at a 1e7 m origin offset (m) | 0.5 m stored globally in f32 vs 4.45e-7 m with floating origin (600-tick 1 m/s walk, dt 1/60) — 1.1e6× improvement | [MEASURED 2026-09-05, tools/spikes/s0.1/report.json; ADR-002] |
+| B-PREC-02 | Rendered-scene distance-from-origin ceiling (m) — verified f64/f32 boundary from S0.1 | 1e5–1e6 m confirmed: f32 spacing 6 cm at 1e6 m, 0.5 m at 1e7 m, 1 km at 1e10 m; f64 side floors at 30.5 µm ULP at 1.5e11 m — full ladder in ADR-002 §Evidence B; contact bubbles bounded separately (B-CONTACT-01) | [MEASURED 2026-09-05, tools/spikes/s0.1/report.json; ADR-002] |
 | B-EPH-01 | Golden-ephemeris residual: our propagator vs Skyfield/Horizons fixtures (arcmin; km at lunar distance) | — | [PLACEHOLDER — gate: Phase 7] |
 | B-EPH-02 | Determinism regression: state-hash agreement across platforms (bitwise pass/fail, per S0.11) | — | [PLACEHOLDER — gate: S0.11] |
+
+### 3.8a Contact bubble — gate S0.1 (measured 2026-09-05; ADR-002)
+
+Added per the ROADMAP §9 flight-revision acceptance matrix ("local contact radius and error
+(S0.1)"). Rapier deterministic-compat 0.20.0, dt 1/60, Rapier defaults, friction 0.7.
+
+| ID | Quantity | Value | Tag |
+|---|---|---|---|
+| B-CONTACT-01 | Active contact-bubble extent bound (m) — tangent (0,0,-g) gravity direction error at the extent | ≤ 1e4 m: direction error 1.57e-3 rad, lateral 0.0154 m/s², 60 s ballistic miss ≈ 28 m; 100 km → 0.0157 rad / 277 m; 1e6 m → model invalid (0.156 rad) | [MEASURED 2026-09-05, tools/spikes/s0.1/report.json; ADR-002 Decision 4] |
+| B-CONTACT-02 | Rebase re-derivation residuals (+1000 m translate + 90° yaw: position m / velocity m/s / quaternion) | 2.44e-5 / 0 / 6.72e-8; contacts re-hold, joint drift 2.38e-7 m. A translation applied to accumulated f32 solver state is a proven contact-killer at 5e6 m (phantom free-fall, tunnelling) | [MEASURED 2026-09-05, tools/spikes/s0.1/report.json; ADR-002 Decision 2] |
+| B-CONTACT-03 | Resting-contact acceptance classes (penetration m) and joint anchor drift | 6.875e-5 m flat pad; 1.056e-3 m on a 15° ramp; fixed joint 0 m drift under 523.6 kg (600 steps, dt 1/60, Rapier defaults) | [MEASURED 2026-09-05, tools/spikes/s0.1/report.json; ADR-002 Decision 5] |
 
 ### 3.9 Pinned external reference figures
 
@@ -353,6 +364,7 @@ Each spike lands exactly one ADR in docs/adr/ and either fills its named §Budge
 - **Question**: does the frame chain plus floating origin hold the world visually stable at planetary scale, where exactly does f64 end and f32 begin, and which Earth-fixed geodesy reference implementation anchors the planet-fixed frame?
 - **Exit criterion**: an ADR recording measured stability at a 1e7 m offset (jitter quantified → B-PREC-01) and the verified f64/f32 boundary → B-PREC-02, backed by a committed test that fails if the rule (subtract large positions in f64, hand small deltas to renderer/physics) is violated — and recording the Earth-fixed geodesy reference-implementation decision (GeographicLib candidate, per COORDINATE_SYSTEM.md §5), including the site normal-gravity values, in the same ADR.
 - **Fills Budgets rows**: B-PREC-01, B-PREC-02. The geodesy decision is ADR-only — no budget row (COORDINATE_SYSTEM.md gates its standard-gravity site values on this ADR).
+- **Status 2026-09-06**: measured — [ADR-002](docs/adr/ADR-002-s01-frames-precision-rebase.md) accepted; B-PREC-01/02 filled and B-CONTACT-01…03 added (§3.8a). Committed f64-violation test lives in the throwaway probe suite (`tools/spikes/s0.1/`) until S0.11 re-homes it. **Open**: the geodesy reference-implementation half of the exit criterion was NOT resolved (ADR-002 Decision 6 — probe used the honest spherical model); it must land as its own decision record before Phase 2.
 
 ### S0.2 — Planet-LOD ADR
 
@@ -365,6 +377,7 @@ Each spike lands exactly one ADR in docs/adr/ and either fills its named §Budge
 - **Question**: what does the first visit actually weigh, per package?
 - **Exit criterion**: every row in §3.1 (B-LOAD-01 … B-LOAD-10) carries a `[MEASURED]` gzip figure (method recorded), or an ADR formally withdraws the informal 3–5 MB claim; either way no load-size promise exists anywhere until this table is filled.
 - **Fills Budgets rows**: B-LOAD-01 … B-LOAD-10.
+- **Status 2026-09-06**: partial — B-LOAD-01, B-LOAD-02 measured; B-LOAD-07 partially (probe shell includes astronomy-engine + i18next, whose row placement is itself an open decision); B-LOAD-03…06 unmeasured (nakama-js, livekit-client, KTX2/meshopt not yet installed); B-LOAD-08…10 open. Method and per-package figures: `tools/spikes/s0.3/report.json`. **Open decision for a Phase-1 ADR**: Rapier WASM shipping config — compat build base64-inlines the WASM (1,088,335 B gzip) vs separate .wasm fetch (772,479 B reference, ≈ 316 KB cheaper but adds a request and needs its own caching path).
 
 ### S0.4 — License ledger completion + CI check
 

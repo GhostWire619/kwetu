@@ -46,13 +46,15 @@ Violating any of these is a bug, no matter what the surrounding code, task, or r
 
 ## Commands
 
-Placeholder — filled in at Phase 1. Until then, do not invent scripts or flags. Phase-0 spike probes are expected and exempt — keep them throwaway under `tools/spikes/`; do not add named package.json scripts or CLI flags before Phase 1 scaffolding lands.
+App dev/build commands fill in at Phase 1 — do not invent scripts or flags beyond what is listed here. Phase-0 tooling is wired as it lands: `typecheck`/`test` run the strict TS check and the vitest suites (including Phase-0 probe tests), and `check:ledger` enforces the THIRD_PARTY_ASSETS.md attribution gate — run it before any commit. Phase-0 spike probes are expected and exempt — keep them throwaway under `tools/spikes/`; do not add further named package.json scripts or CLI flags before Phase 1 scaffolding lands.
 
 | Command | Purpose |
 |---|---|
+| `typecheck` | Strict TypeScript compile check (`tsc --noEmit`) |
+| `test` | Run the vitest suites |
+| `check:ledger` | Enforce the attribution ledger gate (tools/ledger/check.mjs) |
 | `dev` | *(placeholder — fills in at Phase 1)* |
 | `build` | *(placeholder — fills in at Phase 1)* |
-| `test` | *(placeholder — fills in at Phase 1)* |
 | `bake` | *(placeholder — regenerates `data/` artifacts; fills in at Phase 1)* |
 | `golden-test` | *(placeholder — regenerates golden baselines; fills in at Phase 1)* |
 

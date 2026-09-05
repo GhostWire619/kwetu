@@ -34,4 +34,5 @@ which ROADMAP §Budgets rows this fills.
 
 | ADR | Title | Status |
 |---|---|---|
-| *(none yet — Phase 0 spikes land here)* | | |
+| [ADR-001](ADR-001-flight-frames-and-clock.md) | Local physics, fleet movement and a shared clock | accepted design baseline; implementation unverified |
+| [ADR-002](ADR-002-s01-frames-precision-rebase.md) | S0.1 — frame chain validated, f64/f32 boundaries, and contact-bubble rebase | accepted (measured); geodesy reference implementation still open |
