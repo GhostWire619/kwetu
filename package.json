@@ -1,0 +1,26 @@
+{
+  "name": "kwetu",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Kwetu — browser-based persistent multiplayer digital universe (Apache-2.0 code; data/ is the separate ODbL layer).",
+  "license": "Apache-2.0",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "check:ledger": "node tools/ledger/check.mjs"
+  },
+  "dependencies": {
+    "@dimforge/rapier3d-deterministic-compat": "0.20.0",
+    "astronomy-engine": "2.1.19",
+    "i18next": "26.4.2",
+    "three": "0.185.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.3",
+    "@types/three": "^0.185.4",
+    "typescript": "^7.0.2",
+    "vite": "^8.2.2",
+    "vitest": "^5.0.0"
+  }
+}

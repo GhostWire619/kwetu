@@ -1,0 +1,753 @@
+{
+  "spike": "S0.1 — coordinate/origin proof (keystone spike: frame chain, f64/f32 boundaries, contact-bubble rebase, tangent gravity)",
+  "date": "2026-09-05",
+  "host": "Windows 11 dev box, Node 24.13.0, deterministic-compat 0.20.0",
+  "toolVersions": {
+    "node": "v24.13.0",
+    "astronomyEngine": "2.1.19",
+    "rapierDeterministicCompat": "0.20.0",
+    "typescript": "7.0.2 (dev tooling, caret-pinned)",
+    "vitest": "5.0.0 (dev tooling, caret-pinned)"
+  },
+  "runner": "npx vitest run tools/spikes — 4 test files, 38 tests, all passing at write time",
+  "method": {
+    "A_frames": "COORDINATE_SYSTEM.md §1 chain in f64 with astronomy-engine 2.1.19: geodetic (doc §5 WGS84 closed form) -> PlanetFixed(Earth) -> [Rz(+GAST) then library Rotation_EQD_EQJ] -> Pci(Earth) -> [+Earth HelioVector, AU crossed once] -> Helio. Rotation pair: EQJ<->EQD via Rotation_EQJ_EQD/Rotation_EQD_EQJ applied ONLY through library RotateVector (a manual row-major multiply of rot.rot is the transposed/inverse mapping — verified against the library's own ObserverVector ofdate endpoints), plus SiderealTime GAST as the EQD<->PlanetFixed(CTRS) z-rotation: the \"EQJ -> EQD -> CTRS\" pair; no ecliptic frame (banned as a Kwetu frame). Round-trip residual measured in PlanetFixed metres; ENU up radiality via normal-offset lines recovering the anchor lat/lon; G-01 zenith cross-check vs the library's own horizon frame; Law V-1 transport term vs library ObserverState.",
+    "B_precision": "IEEE-754 spacing measured by bit-pattern exponent (f64 2^(e-52), f32 2^(e-23)); additive-jitter rows apply small deltas to stored positions at 1e7 m and 1e10 m in f64 vs f32 (Math.fround); walk-jitter rows integrate 600 fixed ticks of a 1 m/s walk (dt=1/60) stored globally in f32 vs floating-origin f32-local; catastrophic cancellation subtracts the §12 heliocentric pairs (and the Moon case) downcast-first vs subtract-first; 2^24 boundary enumerated over a +/-16 integer window with Math.fround.",
+    "C_bubble": "@dimforge/rapier3d-deterministic-compat 0.20.0 (WASM f32 solver) in Node: Z-up world, world gravity (0,0,-9.80665), dt=1/60, 600 steps, Rapier default solver (numSolverIterations 4, default ERP/allowed linear error), friction 0.7 / restitution 0. Layout per bubble: flat ground pad + 1 m^3 box (~1000 kg), 15° friction ramp + aligned box (~1000 kg, face-to-face contact), static post + 523.6 kg ball on a fixed joint. (i) rest: settle 60 steps, measure 540; also measured with sleeping disabled (active solver). (ii) fixed joint: 600 steps, anchor drift = |anchor positions difference|. (iii) rebase at tick 120: NAIVE = whole-world f32 translation +5e6 m in z (Law P-6-forbidden move; joint anchors body-local and follow), measured vs post-shift pose, plus a sleep-disabled variant exposing the raw failure; COMPLIANT = anchor absorbs 5e6 m in canonical f64, every solver transform re-derived from canonical f64 state (bubble-local coordinates unchanged, <= 3.33 m). (iv) two independent RAPIER.World instances (Dar es Salaam / Oslo anchors, 7.33e6 m apart) stepped simultaneously + a Dar-alone control, bitwise final-state comparison. (v) rebase at tick 120 with +1000 m east translation AND 90° yaw axes change: p' = Rz(-yaw)·(p - t), v' = Rz(-yaw)·v, q' = q_frame ⊗ q; residuals measured against the canonical f64 targets, then 480 post-rebase steps. (vi) ROADMAP §9 acceptance-matrix items: Z-up jump (3 m/s vertical launch; ballistic-phase lateral creep split from the post-landing contact slide), vehicle axes (chassis at 30° yaw dropped under Z-up gravity: up alignment, heading hold, vehicle-frame gravity), parent-relative exit velocity (VEHICLES_AND_FLIGHT.md §5 v = v_parent + ω × r_offset validated with a rigidly-jointed ATTACHED-regime child on a moving+rotating kinematic parent, then the captured state handed to a fresh zero-gravity world — deviation from p0 + v0·t is injected delta-V; plus the rolling-body carry ratio, the 2/7 rolling-sphere result, as the measured caveat that a merely-RESTING body does NOT inherit the attachment-point velocity).",
+    "D_gravity": "Spherical Earth (R = 6 371 000 m), anchor on the surface; body at bubble-local (d,0,0) i.e. P = A + d·east in 3-D; true field central (g = GM⊕/r² toward O, GM⊕ = 3.986004418e14 m³/s² [EXTERNAL — IERS Conventions (2010)/EGM2008]); tangent model uniform (0,0,-9.80665) in the anchor ENU. Direction error = angle(-up_A, -P/|P|) via atan2(|a×b|, a·b); magnitude error = GM⊕/r² - 9.80665; lateral miss = spurious lateral acceleration × 60²/2 [derived playback, not a simulation]. d=0 row is the g-constant choice, NOT a deflection-of-the-vertical figure (spherical model)."
+  },
+  "probes": {
+    "A_frames": {
+      "rotationPairUsed": "EQJ<->EQD via astronomy-engine Rotation_EQJ_EQD / Rotation_EQD_EQJ applied ONLY through library RotateVector (manual row-major multiply of rot.rot is the transposed/inverse mapping; verified against the library's own ObserverVector ofdate=true/false endpoints), plus GAST (SiderealTime) as the EQD<->PlanetFixed(CTRS) z-rotation: the \"EQJ -> EQD -> CTRS\" pair. No ecliptic frame used (banned as a Kwetu frame).",
+      "site": {
+        "name": "Dar es Salaam seafront (COORDINATE_SYSTEM.md §12 worked example)",
+        "latitudeDeg": -6.79,
+        "longitudeDeg": 39.21,
+        "heightMetres": 0,
+        "instantIso": "2026-09-05T00:00:00Z"
+      },
+      "gastDeg": 344.1180787594703,
+      "gastDocSeedDeg": 344.118,
+      "ecefPlanetFixed": [
+        4907565.698481844,
+        4003939.392142213,
+        -749078.2306632765
+      ],
+      "ecefDocSeed": [
+        4907565.698,
+        4003939.392,
+        -749078.231
+      ],
+      "ecefVsDocSeedMaxComponentErrorMetres": 0.0004818439483642578,
+      "pciEqj": [
+        5828917.81824159,
+        2473115.8300009985,
+        -764372.3543545748
+      ],
+      "pciDocSeed": [
+        5828917.818,
+        2473115.83,
+        -764372.354
+      ],
+      "pciVsDocSeedMaxComponentErrorMetres": 0.00035457476042211056,
+      "earthHelioMetresValue": [
+        143544280009.36752,
+        -42547782563.76825,
+        -18444627471.65997
+      ],
+      "earthHelioDocSeedMetres": [
+        143544280009.368,
+        -42547782563.768,
+        -18444627471.66
+      ],
+      "darHelioMetresValue": [
+        143550108927.18576,
+        -42545309447.93825,
+        -18445391844.014324
+      ],
+      "darHelioDocSeedMetres": [
+        143550108927.186,
+        -42545309447.938,
+        -18445391844.014
+      ],
+      "roundTripFullChainResidualMetres": 0.000004373534603816842,
+      "roundTripRotationOnlyResidualMetres": 1.4162535151229749e-9,
+      "g01ZenithSelfConsistencyDeg": 4.814530177612352e-14,
+      "g01ZenithDocSeedDeg": 4.6e-14,
+      "libraryEndpointCheckMetres": 1.0216035510860929e-9,
+      "libraryEllipsoidConstantNote": "astronomy-engine EARTH_FLATTENING = 0.996647180302104 (read from its source) is not WGS84's b/a = 0.996647189335; the library is used only as a direction oracle (G-01), never for survey positions (COORDINATE_SYSTEM.md §5).",
+      "enuUpRadialChecks": [
+        {
+          "offsetHeightMetres": -100,
+          "latLonRecoveredEqualsAnchor": true,
+          "maxLatOrLonDeviationRad": 1.2401310215141802e-16,
+          "heightResidualMetres": 1.862645149230957e-9
+        },
+        {
+          "offsetHeightMetres": 100,
+          "latLonRecoveredEqualsAnchor": true,
+          "maxLatOrLonDeviationRad": 1.2401310215141802e-16,
+          "heightResidualMetres": 9.313225746154785e-10
+        },
+        {
+          "offsetHeightMetres": 1000,
+          "latLonRecoveredEqualsAnchor": true,
+          "maxLatOrLonDeviationRad": 1.2401310215141802e-16,
+          "heightResidualMetres": 9.313225746154785e-10
+        }
+      ],
+      "enuUpVsGeocentricRadialAngleRad": 0.0007860030414336908,
+      "transportVelocity": {
+        "docDerivedEquatorSpeedMetresPerSecond": 465.101142300783,
+        "chainEquatorSpeedMetresPerSecond": 465.10114230078307,
+        "libraryObserverStateEquatorSpeedMetresPerSecond": 465.1010557290901,
+        "chainVsLibraryDiffMetresPerSecond": 0.0000865716929752125
+      },
+      "f32QuantisationOfSitePosition": {
+        "maxComponentErrorMetres": 0.19848184380680323,
+        "vectorErrorMetres": 0.2267206506334484,
+        "docSeedMetres": 0.227
+      },
+      "f32Cancellation": {
+        "f64SubtractionErrorMetres": 0.000004374357517898539,
+        "f32SubtractionErrorMetres": 12636.379995740306,
+        "f32UlpAtHelioMagnitudeMetres": 16384,
+        "docSeedMetres": 12636
+      },
+      "localSceneStep": {
+        "doorMinusEye": [
+          99.99999999963184,
+          2.264813336871896e-11,
+          1.3000000003249972
+        ],
+        "doorMinusEyeDocSeed": [
+          99.99999999963,
+          2.3e-11,
+          1.30000000032
+        ],
+        "doorMinusEyeDeviationFromSeedMetres": 4.9971138338378296e-12,
+        "doorMinusEyeMaxDeviationFromExactMetres": 3.681606131067383e-10,
+        "cameraSpaceF32": [
+          -2.264813336871896e-11,
+          1.2999999523162842,
+          -100
+        ],
+        "cameraSpaceF32DocSeed": [
+          0,
+          1.3,
+          -100
+        ]
+      }
+    },
+    "B_precision": {
+      "spacingLadder": [
+        {
+          "magnitudeMetres": 8192,
+          "landmark": "mm precision dies above this (f32)",
+          "f64SpacingMetres": 1.8189894035458565e-12,
+          "f32SpacingMetres": 0.0009765625
+        },
+        {
+          "magnitudeMetres": 65536,
+          "landmark": "",
+          "f64SpacingMetres": 1.4551915228366852e-11,
+          "f32SpacingMetres": 0.0078125
+        },
+        {
+          "magnitudeMetres": 1048576,
+          "landmark": "scene-bound far edge (Law P-5)",
+          "f64SpacingMetres": 2.3283064365386963e-10,
+          "f32SpacingMetres": 0.125
+        },
+        {
+          "magnitudeMetres": 4194304,
+          "landmark": "Earth radius lives here",
+          "f64SpacingMetres": 9.313225746154785e-10,
+          "f32SpacingMetres": 0.5
+        },
+        {
+          "magnitudeMetres": 5000000,
+          "landmark": "S0.1 bubble rebase height",
+          "f64SpacingMetres": 9.313225746154785e-10,
+          "f32SpacingMetres": 0.5
+        },
+        {
+          "magnitudeMetres": 10000000,
+          "landmark": "B-PREC-01 offset",
+          "f64SpacingMetres": 1.862645149230957e-9,
+          "f32SpacingMetres": 1
+        },
+        {
+          "magnitudeMetres": 16777216,
+          "landmark": "2^24: f32 loses integer metres",
+          "f64SpacingMetres": 3.725290298461914e-9,
+          "f32SpacingMetres": 2
+        },
+        {
+          "magnitudeMetres": 268435456,
+          "landmark": "Moon distance class",
+          "f64SpacingMetres": 5.960464477539063e-8,
+          "f32SpacingMetres": 32
+        },
+        {
+          "magnitudeMetres": 150000000000,
+          "landmark": "Earth heliocentric distance (~1 AU)",
+          "f64SpacingMetres": 0.000030517578125,
+          "f32SpacingMetres": 16384
+        },
+        {
+          "magnitudeMetres": 10000000000,
+          "landmark": "Phase-1 camera fly range",
+          "f64SpacingMetres": 0.0000019073486328125,
+          "f32SpacingMetres": 1024
+        }
+      ],
+      "additiveJitterAt1e7": [
+        {
+          "deltaMetres": 0.001,
+          "f64SurvivedMetres": 0.0010000001639127731,
+          "f64LostMetres": -1.6391277311150754e-10,
+          "f32SurvivedMetres": 0,
+          "f32LostMetres": 0.001,
+          "f32AchievedPositionErrorMetres": 0.0010000001639127731
+        },
+        {
+          "deltaMetres": 0.01,
+          "f64SurvivedMetres": 0.009999999776482582,
+          "f64LostMetres": 2.2351741811588166e-10,
+          "f32SurvivedMetres": 0,
+          "f32LostMetres": 0.01,
+          "f32AchievedPositionErrorMetres": 0.009999999776482582
+        },
+        {
+          "deltaMetres": 0.1,
+          "f64SurvivedMetres": 0.09999999962747097,
+          "f64LostMetres": 3.7252903539730653e-10,
+          "f32SurvivedMetres": 0,
+          "f32LostMetres": 0.1,
+          "f32AchievedPositionErrorMetres": 0.09999999962747097
+        },
+        {
+          "deltaMetres": 0.5,
+          "f64SurvivedMetres": 0.5,
+          "f64LostMetres": 0,
+          "f32SurvivedMetres": 0,
+          "f32LostMetres": 0.5,
+          "f32AchievedPositionErrorMetres": 0.5
+        },
+        {
+          "deltaMetres": 1,
+          "f64SurvivedMetres": 1,
+          "f64LostMetres": 0,
+          "f32SurvivedMetres": 1,
+          "f32LostMetres": 0,
+          "f32AchievedPositionErrorMetres": 0
+        },
+        {
+          "deltaMetres": 10,
+          "f64SurvivedMetres": 10,
+          "f64LostMetres": 0,
+          "f32SurvivedMetres": 10,
+          "f32LostMetres": 0,
+          "f32AchievedPositionErrorMetres": 0
+        }
+      ],
+      "additiveJitterAt1e10": [
+        {
+          "deltaMetres": 0.001,
+          "f64SurvivedMetres": 0.00099945068359375,
+          "f64LostMetres": 5.493164062500208e-7,
+          "f32SurvivedMetres": 0,
+          "f32LostMetres": 0.001,
+          "f32AchievedPositionErrorMetres": 0.00099945068359375
+        },
+        {
+          "deltaMetres": 1,
+          "f64SurvivedMetres": 1,
+          "f64LostMetres": 0,
+          "f32SurvivedMetres": 0,
+          "f32LostMetres": 1,
+          "f32AchievedPositionErrorMetres": 1
+        },
+        {
+          "deltaMetres": 100,
+          "f64SurvivedMetres": 100,
+          "f64LostMetres": 0,
+          "f32SurvivedMetres": 0,
+          "f32LostMetres": 100,
+          "f32AchievedPositionErrorMetres": 100
+        },
+        {
+          "deltaMetres": 512,
+          "f64SurvivedMetres": 512,
+          "f64LostMetres": 0,
+          "f32SurvivedMetres": 1024,
+          "f32LostMetres": -512,
+          "f32AchievedPositionErrorMetres": 512
+        },
+        {
+          "deltaMetres": 1000,
+          "f64SurvivedMetres": 1000,
+          "f64LostMetres": 0,
+          "f32SurvivedMetres": 1024,
+          "f32LostMetres": -24,
+          "f32AchievedPositionErrorMetres": 24
+        },
+        {
+          "deltaMetres": 10000,
+          "f64SurvivedMetres": 10000,
+          "f64LostMetres": 0,
+          "f32SurvivedMetres": 10240,
+          "f32LostMetres": -240,
+          "f32AchievedPositionErrorMetres": 240
+        }
+      ],
+      "walkJitter": [
+        {
+          "offsetMetres": 10000000,
+          "mode": "global-f32",
+          "maxStoredPositionErrorMetres": 0.5,
+          "maxStepErrorMetres": 0.9833333333333333,
+          "finalStoredMinusTruthMetres": 0
+        },
+        {
+          "offsetMetres": 10000000,
+          "mode": "floating-origin-f32-local",
+          "maxStoredPositionErrorMetres": 4.4504801444134046e-7,
+          "maxStepErrorMetres": 6.993611653648146e-7,
+          "finalStoredMinusTruthMetres": 0
+        },
+        {
+          "offsetMetres": 10000000000,
+          "mode": "global-f32",
+          "maxStoredPositionErrorMetres": 10,
+          "maxStepErrorMetres": 0.016666666666666666,
+          "finalStoredMinusTruthMetres": -10
+        },
+        {
+          "offsetMetres": 10000000000,
+          "mode": "floating-origin-f32-local",
+          "maxStoredPositionErrorMetres": 4.4504801444134046e-7,
+          "maxStepErrorMetres": 6.993611653648146e-7,
+          "finalStoredMinusTruthMetres": 0
+        }
+      ],
+      "bPrec01MaxObservedJitterMetres": 0.5,
+      "bPrec02VerifiedBoundaryNote": "B-PREC-02 (rendered-scene distance-from-origin ceiling): the verified f32 boundary facts are the spacing ladder above; the Law P-5 scene bound (~1e5-1e6 m) keeps f32 vertex spacing <= ~0.125 m at 1e6 m and is asserted in code, not hoped for. Contact-bubble extent is measured separately (probe D + C).",
+      "cancellation": [
+        {
+          "caseName": "Dar es Salaam site (Pci) subtracted from its heliocentric position (doc §12 step 8)",
+          "magnitudeMetres": 150854133550.61554,
+          "trueDeltaMetres": 6377840.5386554925,
+          "f64ErrorMetres": 0.000004374357517898539,
+          "f32ErrorMetres": 12636.379995740306,
+          "f64RelativeError": 6.858681228208779e-13,
+          "f32RelativeError": 0.0019812944395759652,
+          "f32UlpAtMagnitudeMetres": 16384
+        },
+        {
+          "caseName": "Earth->Moon geocentric vector recovered from two heliocentric positions (Earth/Moon scale, 2026-09-05)",
+          "magnitudeMetres": 150792642513.6416,
+          "trueDeltaMetres": 369480748.07181436,
+          "f64ErrorMetres": 0.000007223790327289509,
+          "f32ErrorMetres": 1522.4146984951674,
+          "f64RelativeError": 1.9551195468201912e-14,
+          "f32RelativeError": 0.000004120416845641068,
+          "f32UlpAtMagnitudeMetres": 16384
+        }
+      ],
+      "twoPow24": {
+        "value": 16777216,
+        "froundExact": true,
+        "plusOneRoundTripsToSelf": true,
+        "plusOneCollapses": true,
+        "plusTwoExact": true,
+        "minusOneExact": true,
+        "representableIntegersInWindow32": 25,
+        "f64MaxSafeInteger": 9007199254740991,
+        "f64LosesIntegersAbove": 9007199254740992
+      }
+    },
+    "C_bubble": {
+      "config": {
+        "build": "@dimforge/rapier3d-deterministic-compat 0.20.0 (WASM f32 solver, Node 24 host)",
+        "dtSeconds": 0.016666666666666666,
+        "stepCount": 600,
+        "settleSteps": 60,
+        "rebaseTick": 120,
+        "solver": "Rapier defaults: numSolverIterations 4, default contact ERP, default allowed linear error",
+        "worldGravity": [
+          0,
+          0,
+          -9.80665
+        ],
+        "rampTiltRad": 0.2617993877991494,
+        "frictionRestitution": "friction 0.7, restitution 0 everywhere",
+        "massesKg": {
+          "padBox": 999.9999389648438,
+          "rampBox": 999.9999389648438,
+          "hanging": 523.5988159179688
+        }
+      },
+      "resting": {
+        "padBox": {
+          "maxVerticalDriftMetres": 0,
+          "maxPenetrationMetres": 0.00006875395774841309,
+          "maxHorizontalCreepMetres": 0,
+          "maxEnergyProxyDeviationJoules": 0,
+          "maxSpeedMetresPerSecond": 0,
+          "minZMetres": 0.4999312460422516
+        },
+        "rampBox": {
+          "maxVerticalDriftMetres": 0,
+          "maxPenetrationMetres": 0.0010555635064997126,
+          "maxHorizontalCreepMetres": 0,
+          "maxEnergyProxyDeviationJoules": 0,
+          "maxSpeedMetresPerSecond": 0,
+          "minZMetres": 0.9243547320365906
+        },
+        "maxJointAnchorDriftMetres": 0
+      },
+      "restingAwake": {
+        "padBox": {
+          "maxVerticalDriftMetres": 0,
+          "maxPenetrationMetres": 0.00006875395774841309,
+          "maxHorizontalCreepMetres": 0.0000055007760342460944,
+          "maxEnergyProxyDeviationJoules": 1.1823431123048067e-11,
+          "maxSpeedMetresPerSecond": 6.306118767474595e-7,
+          "minZMetres": 0.4999312460422516
+        },
+        "rampBox": {
+          "maxVerticalDriftMetres": 0,
+          "maxPenetrationMetres": 0.0010555635064997126,
+          "maxHorizontalCreepMetres": 0.000006652837328147143,
+          "maxEnergyProxyDeviationJoules": 1.000444171950221e-10,
+          "maxSpeedMetresPerSecond": 0.000001116743985935456,
+          "minZMetres": 0.9243547320365906
+        },
+        "maxJointAnchorDriftMetres": 0
+      },
+      "joint": {
+        "maxAnchorDriftMetres": 0,
+        "finalAnchorDriftMetres": 0,
+        "maxSagMetres": 0,
+        "hangingMassKg": 523.5988159179688
+      },
+      "rebase": {
+        "pre": {
+          "padBox": {
+            "maxVerticalDriftMetres": 0,
+            "maxPenetrationMetres": 0.00006875395774841309,
+            "maxHorizontalCreepMetres": 0,
+            "maxEnergyProxyDeviationJoules": 0,
+            "maxSpeedMetresPerSecond": 0,
+            "minZMetres": 0.4999312460422516
+          },
+          "rampBox": {
+            "maxVerticalDriftMetres": 0,
+            "maxPenetrationMetres": 0.0010555635064997126,
+            "maxHorizontalCreepMetres": 0,
+            "maxEnergyProxyDeviationJoules": 0,
+            "maxSpeedMetresPerSecond": 0,
+            "minZMetres": 0.9243547320365906
+          },
+          "maxJointAnchorDriftMetres": 0
+        },
+        "naive": {
+          "transientVsShiftedPose": {
+            "padBox": {
+              "maxVerticalDriftMetres": 0,
+              "maxPenetrationMetres": 0,
+              "maxHorizontalCreepMetres": 3.253907165344266e-11,
+              "maxEnergyProxyDeviationJoules": 12021.325744628906,
+              "maxSpeedMetresPerSecond": 4.9033308029174805,
+              "minZMetres": 5000000.5
+            },
+            "rampBox": {
+              "maxVerticalDriftMetres": 0,
+              "maxPenetrationMetres": 0,
+              "maxHorizontalCreepMetres": 0,
+              "maxEnergyProxyDeviationJoules": 12021.325744628906,
+              "maxSpeedMetresPerSecond": 4.9033308029174805,
+              "minZMetres": 5000001
+            },
+            "maxJointAnchorDriftMetres": 0
+          },
+          "postSettleVsShiftedPose": {
+            "padBox": {
+              "maxVerticalDriftMetres": 0,
+              "maxPenetrationMetres": 0,
+              "maxHorizontalCreepMetres": 0,
+              "maxEnergyProxyDeviationJoules": 0,
+              "maxSpeedMetresPerSecond": 0,
+              "minZMetres": 5000000.5
+            },
+            "rampBox": {
+              "maxVerticalDriftMetres": 0,
+              "maxPenetrationMetres": 0,
+              "maxHorizontalCreepMetres": 0,
+              "maxEnergyProxyDeviationJoules": 0,
+              "maxSpeedMetresPerSecond": 0,
+              "minZMetres": 5000001
+            },
+            "maxJointAnchorDriftMetres": 0
+          },
+          "padSeparationErrorMetres": -0.0010000000000000009,
+          "rampSeparationErrorMetres": 0.2676809528844636,
+          "rampBoxFloatingAboveContactMetres": 0.2676809528844636,
+          "padPhantomVelocityAtSleepMetresPerSecond": 4.9033308029174805,
+          "sleepDisabled": {
+            "stepsPositionFrozen": 367,
+            "maxSpeedMetresPerSecond": 98.06680297851562,
+            "finalPadBoxZMetres": 4999534.5,
+            "finalPenetrationBelowGroundTopMetres": 465.5,
+            "tunnelledThroughSlab": true
+          }
+        },
+        "compliant": {
+          "padBox": {
+            "maxVerticalDriftMetres": 0,
+            "maxPenetrationMetres": 0.00006875395774841309,
+            "maxHorizontalCreepMetres": 0,
+            "maxEnergyProxyDeviationJoules": 0,
+            "maxSpeedMetresPerSecond": 0,
+            "minZMetres": 0.4999312460422516
+          },
+          "rampBox": {
+            "maxVerticalDriftMetres": 0,
+            "maxPenetrationMetres": 0.0010555635064997126,
+            "maxHorizontalCreepMetres": 0,
+            "maxEnergyProxyDeviationJoules": 0,
+            "maxSpeedMetresPerSecond": 0,
+            "minZMetres": 0.9243547320365906
+          },
+          "maxJointAnchorDriftMetres": 0
+        },
+        "rebaseOffsetMetres": 5000000,
+        "f32SpacingAtRebaseMetres": 0.5,
+        "maxBubbleLocalCoordinateMetres": 3.325251850991631,
+        "verdict": "Naive whole-world f32 translation (+5e6 m in z, f32 spacing 0.5 m at that magnitude) BREAKS resting contact. Injected separation errors: -1.000e-3 m (pad pair) / 2.677e-1 m (ramp pair). With default sleeping, the resting boxes then accumulate phantom free-fall velocity (pad box reaches 4.903 m/s) while their f32 positions stay frozen (fall displacement < the 0.5 m f32 spacing), and the solver spuriously sleeps them at 0.5 s (Rapier default time_before_sleep); the ramp box never re-contacts and ends the run asleep, floating 0.2677 m above its true contact pose. With sleeping disabled the failure is unmasked: the contact is dead, velocity accumulates at ~g per step to 98.1 m/s, the position stays frozen 367 steps, and the box then tunnels through the 1 m ground slab, ending 466 m below the ground top after 600 steps. The Law P-6 compliant re-derivation (anchor absorbs the 5000 km in canonical f64; every solver transform re-derived from canonical state; bubble-local coordinates stay <= 3.33 m) leaves stability identical to pre-rebase (pad penetration 6.875e-5 m, zero drift, zero creep). VERDICT: rebase with resting contacts HOLDS only as canonical-f64 re-derivation (Law P-6); a shift vector applied to accumulated f32 solver state does not hold at 5e6 m magnitude — it silently kills the contact."
+      },
+      "twoBubbles": {
+        "darAnchor": {
+          "latitudeDeg": -6.79,
+          "longitudeDeg": 39.21
+        },
+        "osloAnchor": {
+          "latitudeDeg": 59.9139,
+          "longitudeDeg": 10.7522
+        },
+        "anchorSeparationMetres": 7327305.521202622,
+        "dar": {
+          "padBox": {
+            "maxVerticalDriftMetres": 0,
+            "maxPenetrationMetres": 0.00006875395774841309,
+            "maxHorizontalCreepMetres": 0,
+            "maxEnergyProxyDeviationJoules": 0,
+            "maxSpeedMetresPerSecond": 0,
+            "minZMetres": 0.4999312460422516
+          },
+          "rampBox": {
+            "maxVerticalDriftMetres": 0,
+            "maxPenetrationMetres": 0.0010555635064997126,
+            "maxHorizontalCreepMetres": 0,
+            "maxEnergyProxyDeviationJoules": 0,
+            "maxSpeedMetresPerSecond": 0,
+            "minZMetres": 0.9243547320365906
+          },
+          "maxJointAnchorDriftMetres": 0
+        },
+        "oslo": {
+          "padBox": {
+            "maxVerticalDriftMetres": 0,
+            "maxPenetrationMetres": 0.00006875395774841309,
+            "maxHorizontalCreepMetres": 0,
+            "maxEnergyProxyDeviationJoules": 0,
+            "maxSpeedMetresPerSecond": 0,
+            "minZMetres": 0.4999312460422516
+          },
+          "rampBox": {
+            "maxVerticalDriftMetres": 0,
+            "maxPenetrationMetres": 0.0010555635064997126,
+            "maxHorizontalCreepMetres": 0,
+            "maxEnergyProxyDeviationJoules": 0,
+            "maxSpeedMetresPerSecond": 0,
+            "minZMetres": 0.9243547320365906
+          },
+          "maxJointAnchorDriftMetres": 0
+        },
+        "bitwiseCrossTalkCheckPassed": true
+      },
+      "axesRebase": {
+        "yawRad": 1.5707963267948966,
+        "translationOldEnuMetres": [
+          1000,
+          0,
+          0
+        ],
+        "maxPositionResidualMetres": 0.00002443832636345178,
+        "maxVelocityResidualMetresPerSecond": 0,
+        "maxOrientationResidualQuaternionNorm": 6.718264631501076e-8,
+        "post": {
+          "padBox": {
+            "maxVerticalDriftMetres": 0,
+            "maxPenetrationMetres": 0.00006875395774841309,
+            "maxHorizontalCreepMetres": 1.5848490875214338e-7,
+            "maxEnergyProxyDeviationJoules": 2.928572939708829e-10,
+            "maxSpeedMetresPerSecond": 7.658147065696064e-7,
+            "minZMetres": 0.4999312460422516
+          },
+          "rampBox": {
+            "maxVerticalDriftMetres": 0.00005435943603515625,
+            "maxPenetrationMetres": 0.001109922942534869,
+            "maxHorizontalCreepMetres": 0.00023127666828553226,
+            "maxEnergyProxyDeviationJoules": 0.533083930857174,
+            "maxSpeedMetresPerSecond": 0.0023462528916581306,
+            "minZMetres": 0.9243003726005554
+          },
+          "maxJointAnchorDriftMetres": 2.384185791015625e-7
+        }
+      },
+      "gateMatrix": {
+        "jump": {
+          "launchSpeedMetresPerSecond": 3,
+          "launchHeightMetres": 0.4999312460422516,
+          "continuousApexMetres": 0.9588035418823193,
+          "measuredApexMetres": 0.9525023698806763,
+          "apexMinusContinuousMetres": -0.006301172001643041,
+          "maxHorizontalCreepAirborneMetres": 0.00016491611762018904,
+          "maxHorizontalCreepTotalMetres": 0.0049106675306242005,
+          "finalRestPenetrationMetres": 0.00006905198097229004,
+          "finalRestSpeedMetresPerSecond": 0,
+          "steps": 300
+        },
+        "vehicleAxes": {
+          "yawRad": 0.5235987755982988,
+          "steps": 120,
+          "dropHeightMetres": 1,
+          "finalUpAlignmentErrorRad": 0.000001970706748515017,
+          "finalYawErrorRad": 0.000004183178531238219,
+          "maxHorizontalCreepMetres": 0.0009127581881255138,
+          "finalPenetrationMetres": 0.00010605156421661377,
+          "localGravityDeviationMetresPerSecond2": 0.000019326031335321664,
+          "conventionNote": "Vehicle axes +X right, +Y forward, +Z up (Frame.VehicleLocal, COORDINATE_SYSTEM.md §1); Z-up ENU means world gravity expressed in the vehicle frame is (0,0,-g) for ANY heading — measured here from the settled chassis quaternion."
+        },
+        "parentExit": {
+          "parentLinearVelocityMetresPerSecond": {
+            "x": 0.5,
+            "y": 0,
+            "z": 0
+          },
+          "parentAngularVelocityRadPerSecond": 1,
+          "offsetRadiusMetres": 1,
+          "analyticExitVelocityMetresPerSecond": {
+            "x": 1.256805181503296,
+            "y": -0.6536540985107422,
+            "z": 0
+          },
+          "capturedExitVelocityMetresPerSecond": {
+            "x": 1.2540684938430786,
+            "y": -0.6567959189414978,
+            "z": 0
+          },
+          "carryVelocityErrorAtExitMetresPerSecond": 0.004166592728921194,
+          "maxCarryVelocityErrorLast60StepsMetresPerSecond": 0.004166833180306659,
+          "maxPoseResidualMetres": 0.000009185673324142621,
+          "maxOffsetDriftMetres": 0.00000918318032683274,
+          "exitTick": 240,
+          "inheritedSpeedMetresPerSecond": 1.4156513223205969,
+          "injectedDeltaVMetresPerSecond": 0,
+          "postExitMaxTrajectoryDeviationMetres": 0.0000508023223621911,
+          "postExitSteps": 120,
+          "rollingBodyCarryRatioAtExit": 0.2834358515910005,
+          "methodNote": "Parent-relative exit velocity (VEHICLES_AND_FLIGHT.md §5): exit v = v_parent + ω × r_offset, validated against the solver with a rigidly-jointed (ATTACHED-regime) child on a moving+rotating kinematic parent, then handing the captured state to a fresh zero-gravity world at EXIT_TICK: deviation from p0 + v0·t is injected free delta-V (§3 forbids it); zero gravity isolates the handover from any force-model choice. The parent plate is a flat cuboid because this build's ball-vs-cylinder manifold returns a tilted normal off-axis (recorded in the S0.1 findings). Secondary measurement: a merely-RESTING rolling body on the same parent reaches only rollingBodyCarryRatioAtExit of the surface velocity (classic rolling-sphere 2/7) — the exit formula is the ATTACHMENT-point velocity, not a carried body's."
+        }
+      }
+    },
+    "D_gravity": {
+      "method": "Spherical Earth (R = 6 371 000 m), anchor on the surface, body at bubble-local (d,0,0) i.e. P = A + d·east in 3-D; true field central (g = GM⊕/r² toward O); tangent model uniform (0,0,−9.80665) in the anchor ENU. Direction error = angle(−up_A, −P/|P|) via atan2(|a×b|, a·b); magnitude error = GM⊕/r² − 9.80665. Lateral miss = spurious lateral acceleration × 60²/2 [derived playback, not a simulation].",
+      "gmMetres3PerSecond2": 398600441800000,
+      "radiusMetres": 6371000,
+      "tangentGMetresPerSecond2": 9.80665,
+      "gravityAtAnchorMetresPerSecond2": 9.820250487063928,
+      "rows": [
+        {
+          "displacementMetres": 0,
+          "trueGravityMetresPerSecond2": 9.820250487063928,
+          "angularDirectionErrorRad": 0,
+          "magnitudeErrorMetresPerSecond2": 0.013600487063929023,
+          "magnitudeRelativeError": 0.0013868637163485006,
+          "curvatureRelativeMagnitudeDrop": 0,
+          "spuriousLateralAccelerationMetresPerSecond2": 0,
+          "lateralMissOver60sMetres": 0
+        },
+        {
+          "displacementMetres": 100,
+          "trueGravityMetresPerSecond2": 9.82025048464453,
+          "angularDirectionErrorRad": 0.00001569612305631576,
+          "magnitudeErrorMetresPerSecond2": 0.013600484644531008,
+          "magnitudeRelativeError": 0.0013868634696385625,
+          "curvatureRelativeMagnitudeDrop": 2.4636825912693894e-10,
+          "spuriousLateralAccelerationMetresPerSecond2": 0.00015413986004449585,
+          "lateralMissOver60sMetres": 0.27745174808009254
+        },
+        {
+          "displacementMetres": 1000,
+          "trueGravityMetresPerSecond2": 9.820250245124114,
+          "angularDirectionErrorRad": 0.0001569612292870388,
+          "magnitudeErrorMetresPerSecond2": 0.013600245124115062,
+          "magnitudeRelativeError": 0.0013868390453534146,
+          "curvatureRelativeMagnitudeDrop": 2.463682713393922e-8,
+          "spuriousLateralAccelerationMetresPerSecond2": 0.00154139854405183,
+          "lateralMissOver60sMetres": 2.774517379293294
+        },
+        {
+          "displacementMetres": 10000,
+          "trueGravityMetresPerSecond2": 9.82022629314141,
+          "angularDirectionErrorRad": 0.001569611016753441,
+          "magnitudeErrorMetresPerSecond2": 0.01357629314141029,
+          "magnitudeRelativeError": 0.0013843966228437121,
+          "curvatureRelativeMagnitudeDrop": 0.0000024636767209651467,
+          "spuriousLateralAccelerationMetresPerSecond2": 0.015413929047563184,
+          "lateralMissOver60sMetres": 27.74507228561373
+        },
+        {
+          "displacementMetres": 100000,
+          "trueGravityMetresPerSecond2": 9.817831684767853,
+          "angularDirectionErrorRad": 0.01569483423917203,
+          "magnitudeErrorMetresPerSecond2": 0.011181684767853639,
+          "magnitudeRelativeError": 0.00114021452461887,
+          "curvatureRelativeMagnitudeDrop": 0.0002463075966607775,
+          "spuriousLateralAccelerationMetresPerSecond2": 0.15408291488059184,
+          "lateralMissOver60sMetres": 277.3492467850653
+        },
+        {
+          "displacementMetres": 1000000,
+          "trueGravityMetresPerSecond2": 9.584127975521596,
+          "angularDirectionErrorRad": 0.15569094687581186,
+          "magnitudeErrorMetresPerSecond2": -0.22252202447840297,
+          "magnitudeRelativeError": -0.022690931610529895,
+          "curvatureRelativeMagnitudeDrop": 0.024044448953045805,
+          "spuriousLateralAccelerationMetresPerSecond2": 1.486141008934559,
+          "lateralMissOver60sMetres": 2675.053816082206
+        }
+      ],
+      "maxAzimuthSymmetryDeviation": {
+        "angularErrorRad": 0,
+        "magnitudeMetresPerSecond2": 0
+      },
+      "sphericalModelNote": "Spherical model: zero deflection of the vertical by construction, so the d=0 row is the g-constant choice (μ/R² vs 9.80665), NOT a geodetic deflection figure; ellipsoidal normal gravity is owned by the geodesy decision (COORDINATE_SYSTEM.md §5/S0.1 ADR)."
+    }
+  },
+  "budgetInputs": {
+    "bPrec01": {
+      "quantity": "Max observed positional jitter at a 1e7 m origin offset (m) — ROADMAP §3.8",
+      "value": 0.5,
+      "note": "Filled below from B_precision.walkJitter (global-f32 walk at 1e7 m, 600 ticks at dt=1/60)."
+    },
+    "bPrec02": {
+      "quantity": "Rendered-scene distance-from-origin ceiling (m) — verified f64/f32 boundary — ROADMAP §3.8",
+      "note": "COORDINATE_SYSTEM.md Law P-5 scene bound (~1e5–1e6 m) is consistent with the measured ladder: f32 spacing 1.5e-11 m at 6.5e4 m, 0.125 m at 1.05e6 m, 1 m at 1e7 m. The verified boundary facts are the B_precision.spacingLadder rows; contact-bubble extent is measured separately (probe D + C)."
+    }
+  }
+}

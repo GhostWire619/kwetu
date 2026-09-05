@@ -1,0 +1,135 @@
+{
+  "spike": "S0.3 — initial load budget (per-package bytes)",
+  "measuredAt": "2026-09-05T19:05:00.504Z",
+  "method": {
+    "builder": "vite 8.2.2 production build (rolldown bundler — vite 8 default), one entry per build, no shared chunks",
+    "raw": "same build with minify disabled — structural bundle size",
+    "minified": "vite production default minifier (vite 8 = oxc; the esbuild minifier path is deprecated in vite 8 and errors without esbuild installed separately)",
+    "gzip": "node zlib gzipSync level 9 over the concatenated minified JS output",
+    "units": "bytes",
+    "realismNote": "Imports are kept realistic (the surface the Phase 1 shell will import); no aggressive tree-shaking tricks, no dead-code stripping beyond vite defaults."
+  },
+  "toolVersions": {
+    "node": "v24.13.0",
+    "vite": "8.2.2",
+    "three": "0.185.1",
+    "rapierDeterministicCompat": "0.20.0",
+    "astronomyEngine": "2.1.19",
+    "i18next": "26.4.2"
+  },
+  "entries": {
+    "three": {
+      "entry": "three",
+      "files": {
+        "raw": [
+          "entry.js 1150902 B"
+        ],
+        "min": [
+          "entry.js 511462 B"
+        ]
+      },
+      "jsTotalBytes": {
+        "raw": 1150902,
+        "minified": 511462,
+        "gzip9": 126438
+      },
+      "units": "bytes",
+      "nonJsAssets": []
+    },
+    "rapier": {
+      "entry": "rapier",
+      "files": {
+        "raw": [
+          "entry.js 2922934 B"
+        ],
+        "min": [
+          "entry.js 2887718 B"
+        ]
+      },
+      "jsTotalBytes": {
+        "raw": 2922934,
+        "minified": 2887718,
+        "gzip9": 1088335
+      },
+      "units": "bytes",
+      "nonJsAssets": []
+    },
+    "astronomy": {
+      "entry": "astronomy",
+      "files": {
+        "raw": [
+          "entry.js 95621 B"
+        ],
+        "min": [
+          "entry.js 44521 B"
+        ]
+      },
+      "jsTotalBytes": {
+        "raw": 95621,
+        "minified": 44521,
+        "gzip9": 19257
+      },
+      "units": "bytes",
+      "nonJsAssets": []
+    },
+    "i18next": {
+      "entry": "i18next",
+      "files": {
+        "raw": [
+          "entry.js 74999 B"
+        ],
+        "min": [
+          "entry.js 43171 B"
+        ]
+      },
+      "jsTotalBytes": {
+        "raw": 74999,
+        "minified": 43171,
+        "gzip9": 13568
+      },
+      "units": "bytes",
+      "nonJsAssets": []
+    },
+    "shell": {
+      "entry": "shell",
+      "files": {
+        "raw": [
+          "entry.js 4244682 B"
+        ],
+        "min": [
+          "entry.js 3488728 B"
+        ]
+      },
+      "jsTotalBytes": {
+        "raw": 4244682,
+        "minified": 3488728,
+        "gzip9": 1249242
+      },
+      "units": "bytes",
+      "nonJsAssets": []
+    }
+  },
+  "rapierWasmStandalone": {
+    "file": "node_modules/@dimforge/rapier3d-deterministic-compat/dist/rapier_wasm3d_bg.wasm",
+    "rawBytes": 2048139,
+    "gzip9Bytes": 772479,
+    "units": "bytes",
+    "note": "Reference figure only: the pinned deterministic-compat package base64-inlines this WASM into its JS (rapier.mjs), so the built JS already carries it — do not add this row to the JS figure in B-LOAD-09. A separate-WASM shipping configuration would transfer this raw/gzip figure instead."
+  },
+  "derived": {
+    "shellOverheadVsDepSum": {
+      "note": "DERIVED, not a direct measurement: shell minus the four single-entry minified figures — a crude proxy for app-shell code + locale JSON in this spike entry only, not the real B-LOAD-07 shell.",
+      "minifiedBytesDelta": 1856,
+      "gzipBytesDelta": 1644
+    },
+    "shellIfWasmShippedSeparately": {
+      "note": "DERIVED estimate, not a build: shell gzip minus the rapier-entry JS gzip (the base64-inlined WASM portion) plus the standalone .wasm gzip — the transfer a separate-WASM shipping configuration would plausibly approach. A bound from base64-vs-raw arithmetic; never cite it as a measurement.",
+      "gzipBytesEstimate": 933386
+    }
+  },
+  "scopeNotes": [
+    "Rapier WASM is measured separately (rapierWasmStandalone) and is base64-inlined in the compat JS — the rapier entry JS figure already includes it.",
+    "B-LOAD-03 (nakama-js), B-LOAD-04 (livekit-client), B-LOAD-05 (KTX2/Basis transcoder), B-LOAD-06 (meshopt decoder) are NOT measured by this probe run — those packages are not installed at scaffold.",
+    "B-LOAD-09 (total first visit) and B-LOAD-10 (warm re-visit) are NOT computable from this run — they need the full package set and a Cache-API/IndexedDB probe."
+  ]
+}

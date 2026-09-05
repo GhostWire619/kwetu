@@ -1,0 +1,31 @@
+{
+  // Kwetu Phase-0 toolchain. Flags per CLAUDE.md (TypeScript strict,
+  // moduleResolution "bundler"); canonical frame math is f64 in JS — the
+  // compiler cannot enforce that, so these flags are the floor, not the ceiling.
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM"],
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    // Skips error-checking of .d.ts internals only — our own code stays
+    // fully checked. Needed at scaffold time: vite 8.2.2 / vitest 5.0.0
+    // ship mutually incompatible declaration internals, and vitest 5.0.0's
+    // config.d.ts imports '@vitest/expect', which its own package.json
+    // does not declare. Revisit on the next tooling bump.
+    "skipLibCheck": true,
+    // No global @types auto-inclusion: @types/node stays scoped to module
+    // imports ('node:*') pulled in by vite/vitest's own declarations, so
+    // Node globals never leak into browser code. three 0.185.1 ships no
+    // .d.ts (verified in node_modules) — @types/three@0.185.4 resolves
+    // through the 'three' specifier, which is independent of "types".
+    "types": []
+  },
+  "include": ["src", "tests", "vite.config.ts", "vitest.config.ts"],
+  "exclude": ["node_modules", "tools/spikes"]
+  // tools/spikes/** is the throwaway probe carve-out (CLAUDE.md): probes run
+  // under vitest (esbuild transpile) and are deliberately outside the
+  // production typecheck program.
+}

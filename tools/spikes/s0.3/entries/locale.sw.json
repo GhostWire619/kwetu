@@ -1,0 +1,10 @@
+{
+  "welcome.title": "Karibu Kwetu",
+  "welcome.subtitle": "Ulirimbi wa pamoja wa kidijitali",
+  "nav.play": "Cheza",
+  "nav.settings": "Mipangilio",
+  "nav.quit": "Toka",
+  "status.loading": "Inapakia…",
+  "status.connected": "Imeunganishwa",
+  "status.disconnected": "Munganisho umekatika"
+}
