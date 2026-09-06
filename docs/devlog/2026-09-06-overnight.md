@@ -87,3 +87,17 @@ checks them.
   shared-AudioContext rule + push-to-talk default).
 - Four workflows in flight: Night B (S0.2 measurement + ADR-003), groundwork
   (walk/vehicle/orbits), multiplayer/voice groundwork, Part B renderer.
+
+## 05:50 — audit remediation landed
+- **a8a121f**: three-lens audit of the Phase-0 landing pass triaged and remediated. Both
+  blockers dismissed as concurrent-work false positives (server/runtime-go is Night F's
+  authorized path; delatin/geotiff already ledgered code-30/31). 12 real findings fixed:
+  ADR-003 reserved stub (gate arithmetic + broken link), B-VAL-02 relabeled dimensionless
+  + B-VAL-03 split out, B-EPH-02 addendum, B-EPH-01 scope, S0.9 timing three-way aligned,
+  S0.7/S0.11/S0.1 section-7.1 entries, ADR-009 cell corrections, license hedge, status
+  vocabulary, s0.7 6.3 s note, writeReport .ts-import fix (Node TS runner) verified to
+  regenerate byte-identical. Deferred to quiet machine: full S0.2 pass (CDLOD, silhouette,
+  thrash fix) — concurrent load would distort the numbers.
+- Night B workflow complete (S0.2 blocked by agent stalls → PARTIAL, all other spikes
+  landed). Remaining in flight: groundwork (walk/vehicle/orbits), multiplayer/voice,
+  Part B renderer — the game-running critical path.
