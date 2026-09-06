@@ -46,7 +46,7 @@ Violating any of these is a bug, no matter what the surrounding code, task, or r
 
 ## Commands
 
-App dev/build commands fill in at Phase 1 — do not invent scripts or flags beyond what is listed here. Phase-0 tooling is wired as it lands: `typecheck`/`test` run the strict TS check and the vitest suites (including Phase-0 probe tests), and `check:ledger` enforces the THIRD_PARTY_ASSETS.md attribution gate — run it before any commit. Phase-0 spike probes are expected and exempt — keep them throwaway under `tools/spikes/`; do not add further named package.json scripts or CLI flags before Phase 1 scaffolding lands.
+App dev/build commands wired at the Phase-1 client entry — do not invent scripts or flags beyond what is listed here. Phase-0 tooling is wired as it lands: `typecheck`/`test` run the strict TS check and the vitest suites (including Phase-0 probe tests), and `check:ledger` enforces the THIRD_PARTY_ASSETS.md attribution gate — run it before any commit. Phase-0 spike probes are expected and exempt — keep them throwaway under `tools/spikes/`; do not add further named package.json scripts or CLI flags before Phase 1 scaffolding lands.
 
 | Command | Purpose |
 |---|---|
@@ -57,7 +57,8 @@ App dev/build commands fill in at Phase 1 — do not invent scripts or flags bey
 | `bake:terrain` | Regenerate terrain meshes from Copernicus GLO-30 (tools/bake/terrain.mjs) |
 | `bake:basemap` | Regenerate region PMTiles via planetiler (tools/bake/basemap.ps1, needs Docker) |
 | `golden-test` | Regenerate the golden ephemeris baselines (tools/oracle/generate_golden.py, needs the DE440s kernel) |
-| `dev` / `build` | *(placeholder — wire with the Phase-1 client entry)* |
+| `dev` | Vite dev server for the client (`vite client --config vite.config.ts`, port 5199 — serves the shell at `/client/index.html` and the e2e fixtures) |
+| `build` | Production client build (`vite build client --config vite.config.ts` → gitignored `build/shell/`; B-LOAD-09 measures it via tools/measure/shell-load.mjs) |
 
 ## Repo layout
 

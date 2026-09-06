@@ -95,9 +95,9 @@ measured.
 | B-LOAD-04 | livekit-client | 131,745 B (E2EE worker excluded; its 68,605 B gzip9 build recorded separately in ADR-004) | [MEASURED 2026-09-06, tools/spikes/s0.3/measure.mjs] |
 | B-LOAD-05 | KTX2 / Basis transcoder (WASM + JS) | 262,678 B | [MEASURED 2026-09-06, tools/spikes/s0.3/measure.mjs] |
 | B-LOAD-06 | meshopt decoder (WASM + JS) | 7,804 B as shipped (7,231 B when bundled) | [MEASURED 2026-09-06, tools/spikes/s0.3/measure.mjs] |
-| B-LOAD-07 | App shell composition — definition revised 2026-09-06 (§7): the probed figure includes three + Rapier compat + B-LOAD-12/13; the pure app-TS+CSS-only figure moves to Phase 1 with the real build | 1,216,417 B derived (cross-check direct build 1,215,356 B; composition = B-LOAD-01 + B-LOAD-02 + B-LOAD-12 + B-LOAD-13 + app code) | [DERIVED 2026-09-06, subtraction anchored on [MEASURED] builds (shell 1,249,242 − astronomy-engine 19,257 − i18next 13,568) + direct-build cross-check [MEASURED 1,215,356], tools/spikes/s0.3/report.json] |
+| B-LOAD-07 | App shell composition — definition revised 2026-09-06 (§7); **superseded for the real Phase-1 shell by the built-shell measurement below** — the probed S0.3 figure includes three + Rapier compat + B-LOAD-12/13; the pure app-TS+CSS-only figure moved to Phase 1 with the real build and has landed there: 597,993 B raw / 158,799 B gzip-9 single chunk (three 0.185.1 + astronomy-engine + 12 app/engine modules; Rapier absent — physics-free shell) | 1,216,417 B derived, S0.3 probe (composition = B-LOAD-01 + B-LOAD-02 + B-LOAD-12 + B-LOAD-13 + app code); **Phase-1 built shell [MEASURED] 597,993 B raw / 158,799 B gzip-9** (ADR-004 Addendum 2026-09-06) | [DERIVED 2026-09-06 for the S0.3 probe, tools/spikes/s0.3/report.json; **[MEASURED 2026-09-06, tools/measure/shell-load.mjs over `npm run build` output]** for the real shell] |
 | B-LOAD-08 | One locale bundle (EN or sw JSON; locales load lazily per docs/swahili-i18n.md) | sw 1,346 / EN 1,210 (112-key spike fixture; production namespace re-measure at Phase 1) | [MEASURED 2026-09-06, tools/spikes/s0.3/measure.mjs] |
-| B-LOAD-09 | **Total first-visit transfer** — method revised 2026-09-06 (§7): ADR-004 inclusion list (shell 1,401,137 + Basis transcoder 262,678 + EN locale 1,210), NOT a naive sum of rows 01–08 (which would double-count) | 1,665,025 B provisional | [DERIVED 2026-09-06, sum over stated inclusion list; every component individually [MEASURED]] |
+| B-LOAD-09 | **Total first-visit transfer** — method revised 2026-09-06 (§7): ADR-004 inclusion list, NOT a naive sum of rows 01–08 (which would double-count). **Phase-1 shell component replaced by the real build**: built shell 597,993 B raw / 158,799 B gzip-9 (Rapier-free; ADR-004 Addendum 2026-09-06) — nakama-js, livekit-client, Rapier-compat and locale rows still stack on top as those subsystems wire in | 597,993 + 262,678 + 1,210 = 861,881 B gzip-based provisional (was 1,665,025 B with the probed shell); still provisional — rows 03/04/08 stack in later phases | [DERIVED 2026-09-06, sum over the stated inclusion list with the Phase-1 shell component [MEASURED 2026-09-06, tools/measure/shell-load.mjs]; every other component individually [MEASURED]] |
 | B-LOAD-10 | Warm re-visit transfer (Cache API / IndexedDB hit, `navigator.storage.persist()` granted) | — | [PLACEHOLDER — gate: Phase 1 (re-gated from S0.3 per ADR-004 — static probe cannot observe cache behaviour; §7)] |
 | B-LOAD-12 | astronomy-engine | 19,257 B (inside B-LOAD-07 composition; not additive) | [MEASURED 2026-09-06, tools/spikes/s0.3/measure.mjs] |
 | B-LOAD-13 | i18next | 13,568 B (inside B-LOAD-07 composition; not additive) | [MEASURED 2026-09-06, tools/spikes/s0.3/measure.mjs] |
@@ -507,6 +507,13 @@ recorded in the phase's gate entry and not listed here.
 - **2026-09-06 — B-LOAD-07 definition revised.** The probed "app shell" figure includes
   three + Rapier compat + astronomy-engine + i18next; the pure app-TS+CSS figure moves
   to Phase 1 with the real build. Recording ADR: ADR-004 (Decision 4).
+- **2026-09-06 (later) — B-LOAD-07/09 shell component replaced by the real Phase-1 build**
+  (Part B landing): `npm run build` output measured 597,993 B raw / 158,799 B gzip-9,
+  Rapier-free ([MEASURED], tools/measure/shell-load.mjs; ADR-004 Addendum). This is a
+  tightening on real evidence, not a loosening — the shell share of the first-visit total
+  dropped from the probed 1,401,137 B to the measured 158,799 B gzip. Rapier's
+  shipping-config confirmation remains open (walk phase). Recording ADR: ADR-004
+  (Addendum — Phase-1 built-shell measurement).
 - **2026-09-06 — B-LOAD-09 method revised.** Total transfer = ADR-004 inclusion list
   (shell + Basis transcoder + locale), not a naive sum of rows 01–08 (double-counts).
   Recording ADR: ADR-004.

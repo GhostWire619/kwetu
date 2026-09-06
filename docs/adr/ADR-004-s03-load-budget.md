@@ -155,3 +155,37 @@ is ever taken; (4) KTX2Loader/MeshoptDecoder loader-side in-bundle cost (Phase 2
 for nakama-js 2.8.0, livekit-client 2.22.2 and their transitive dependencies (S0.4 gate — licenses
 to be verified from the LICENSE files at pinned commits, not from package metadata); (6) the real
 locale namespace (S0.10) replaces the 112-key fixture.
+
+## Addendum — Phase-1 built-shell measurement (2026-09-06, Part B review follow-up)
+
+The Phase-1 Part-B client shell now has a wired production build, and the built artifact is
+measured with a committed, regenerable script — closing the "today only in gitignored `build/`"
+provenance gap flagged in the 2026-09-06 Part-B review.
+
+**Invocation** [MEASURED 2026-09-06]: `npm run build` → `vite build client --config vite.config.ts`
+(vite 8.2.2, rolldown bundler + oxc minifier, sourcemaps on; output `build/shell/`, config
+`vite.config.ts` at the repo root — the explicit `--config` is required because vite resolves an
+explicit config path against the process CWD while config *discovery* resolves against the
+positional root). The dev server is wired symmetrically: `npm run dev` →
+`vite client --config vite.config.ts` (verified booting the shell, zero console/page errors,
+2026-09-06).
+
+**Built-shell figure** [MEASURED 2026-09-06, `tools/measure/shell-load.mjs` — zlib `gzipSync`
+level 9 over `build/shell/assets/*.js` + the sourcemap module list]: single chunk **597,993 B raw
+/ 158,799 B gzip-9** (the pre-fix review diagnostic quoted 597,338 / 158,430; the delta is the
+review's own debug-surface additions — re-measured after them). Modules in the chunk: **15** —
+12 app modules (`client/src/app/*`, `client/src/engine/*` incl. `leap-seconds.json`), 1
+`astronomy-engine`, 2 `three`. **Rapier absent** (`rapierHits: []` — no `@dimforge` module and no
+WASM payload in the shell), as the Part-B no-Rapier-in-the-shell rule requires.
+
+**Scope of this confirmation — narrower than Decision 2's open item.** This is the physics-free
+shell: it confirms the shell builds and measures small *without* Rapier, and therefore does NOT
+yet confirm the compat-Rapier-behind-first-render shipping choice on a real shell — that
+confirmation still lands with the walk phase, when Rapier enters the bundle and the deferred-init
+path is exercised. Until then Consequences' open item (2) stands.
+
+**Durability**: the measurement script is committed at `tools/measure/shell-load.mjs` (the
+diagnostic it replaces lived only in gitignored `build/`); regenerate with
+`npm run build && node tools/measure/shell-load.mjs`. Recorded here for the orchestrator's
+landing pass to fold into the ROADMAP §Budgets rows — row values are orchestrator-owned, so this
+addendum deliberately does not rewrite B-LOAD-07/09.
