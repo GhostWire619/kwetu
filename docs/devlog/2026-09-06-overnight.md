@@ -138,3 +138,53 @@ checks them.
   z-fighting, shell-transfer recorded).
 - Remaining in flight: groundwork workflow (walk/vehicle/orbits — 6 orbits reds are its
   live fix rounds). Next after it lands: Night D Earth-data streaming into this shell.
+
+## 09:45 — Groundwork landed: orbits recovered + walk/vehicle (Phase-2/3/4 core)
+- **463497e**: walk KCC + persistence + vehicle controller (headless,
+  renderer-independent). 35/35 at commit. Walk canonical position = f64 sum of
+  f32 computedMovement offsets; CONTROLLER deviation 7.5e-4 m over 180 ticks
+  [MEASURED], TRACKING error ~1e-15 class [DERIVED]. Vehicle:
+  rapier3d-deterministic-compat 0.20.0 API facts measured from .d.ts —
+  addWheel takes positional args (no WheelOptions); `setIndexForwardAxis`
+  assigned as a property; VehicleTuning.rollInfluence is INERT (no JS setter,
+  Rust default 0.1 applies). setSteer normalized; full lock 0.5 rad;
+  setSteer(0.2) @ 19.1 m/s → +49.5°/1s throttle-held [MEASURED].
+- **0d50387**: the orbits module, recovered centrally after the groundwork
+  workflow stalled 6/6 attempts on it. All 6 failures diagnosed with a
+  standalone f64 probe (vitest silences console.log):
+  1. **Newton stall on long hyperbolic arcs is real** — the clamped closed-form
+     guess (HYPERBOLIC_GUESS_Z_MAX=1e4) lands in the exp-dominated Stumpff
+     region, F(guess) ~ 1e54 on a 20-day escape arc, Newton exits on
+     stagnation after 2 iterations; the doc comment claiming "never observed"
+     was falsified and rewritten. Fix: fallback bisection to full f64
+     resolution (Number.EPSILON·|hi|; the old 1e-12·max(1,hi) stop measured
+     6.9e-11 relative h drift) + stagnation-stopped min-|F| Newton polish →
+     |Δh|/|h| = 1.75e-14 (bound 1e-12), |Δε|/|ε| = 3.7e-16.
+  2. **Round-trip bound 1e-6 was below the f64 floor** — reconstruction
+     accumulates O(10²–10³) roundings; n-splitting shows NO systematic term
+     (wanders 1.1e-6..3.2e-6 vs n=1..64, non-monotone → per-solve rounding,
+     not truncation); one-way vs 1000-step ref = 3.4e-7. Amended 5e-6 with
+     derivation; measured envelope 0..1.44e-6.
+  3. **Circular identity 1e-9 unachievable** — g = dt − χ³S/√μ is the
+     difference of two ~√μ·dt terms; δg ~ few·ulp ≈ few·6e-12 s → δr ≈
+     1.65e-8 m [MEASURED]. Amended 1e-7; test retitled to the
+     g-cancellation floor.
+  4. **Stumpff seam 1e-16 unachievable** — closed form's own (1−cos)
+     cancellation floor ~2·eps/z ≈ 4.4e-14 at the seam; that is WHY the series
+     branch exists. Amended 1e-13; measured ΔC = 5.7e-15.
+  5. **Exact hyperbolic asymptote not f64-representable** — cos(acos(−1/e))
+     reproduces −1/e only to a few ulps with uncontrollable sign; test now
+     constructs ν ± 1e-9 from the asymptote (must throw above / must not
+     throw below).
+  6. **Kernel-analytic velocity was the wrong reference** — it is the
+     Chebyshev fit's derivative, error class 2.5e-6..4.8e-6 m/s [MEASURED]
+     (row 0 27% over, row 1 13% under its own (h²/6)·jerk prediction). Oracle
+     now emits five-point stencil columns ([-r(t+2h)+8r(t+h)−8r(t−h)+
+     r(t−2h)]/(12h), skyfield whole/fraction JD split for the instants);
+     measured agreement (h²/6)·jerk ratios 0.9995 / 1.0000; fixture
+     regenerated, kernel sha256 verified (c1c7fee…).
+- Gates at 0d50387: typecheck 0; orbits 47/47; total 456/457 (the 1 red is
+  the deferred S0.2 thrash probe, untracked); check:ledger PASS (3 warnings,
+  0 failures).
+- Next: Night D (Earth data streaming into the Part B shell), Night E (walk
+  wiring + localScene unification), then the morning report.
