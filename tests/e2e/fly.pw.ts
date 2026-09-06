@@ -159,12 +159,22 @@ test('shell flies 1 m -> 1e10 m: finite values, stationary jitter < 0.5 px, boun
   // Console error + page error capture across the WHOLE flight. three's own
   // warnings are allowed only as console 'warning'/'info' — anything at
   // 'error' level, or any uncaught exception, fails the run (aim: zero).
+  //
+  // One exclusion, documented: Firefox emits a machine-local profile-noise
+  // console error ("Bookmarks.html file could be corrupt" [MEASURED
+  // 2026-09-06 — a full-suite parallel run failed this spec on it while the
+  // app's own console stayed clean; it passes in isolation]). It is browser
+  // profile output, not page output, so it is filtered here rather than
+  // weakening the page-error gate.
+  const FIREFOX_PROFILE_NOISE = 'Bookmarks.html file could be corrupt';
   const problems: string[] = [];
   page.on('pageerror', (error) => {
     problems.push(`pageerror: ${error.message}`);
   });
   page.on('console', (message) => {
-    if (message.type() === 'error') problems.push(`console.error: ${message.text()}`);
+    if (message.type() === 'error' && !message.text().includes(FIREFOX_PROFILE_NOISE)) {
+      problems.push(`console.error: ${message.text()}`);
+    }
   });
 
   await page.goto('/client/index.html');
