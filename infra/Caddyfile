@@ -84,5 +84,18 @@ localhost {
 	reverse_proxy /v2/* nakama:7350
 	reverse_proxy /ws nakama:7350
 
+	# ---- LiveKit signaling (NETWORKING.md §10 groundwork) --------------------
+	# voice_token_rpc hands clients LIVEKIT_HOST; the livekit container
+	# publishes only loopback 7880 as PLAIN ws — which an https page cannot
+	# dial (mixed content). Route signaling through this TLS origin instead,
+	# same mechanism as /ws: the SDK dials <host>/rtc..., so /livekit/* is
+	# proxied with the prefix stripped (handle_path) and LIVEKIT_HOST is
+	# wss://localhost:8443/livekit (.env). SCOPE: signaling only. WebRTC
+	# media (ICE/UDP) is not published in the dev compose and TURN is an
+	# open item (infra/README-dev.md) — making media flow is Phase-6 work.
+	handle_path /livekit/* {
+		reverse_proxy livekit:7880
+	}
+
 	file_server
 }

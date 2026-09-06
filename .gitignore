@@ -49,3 +49,8 @@ blob-report/
 
 # Local agent state
 .claude/
+
+# Go runtime plugin build artifacts (~17 MB each; the repo artifact is the
+# source + server/runtime-go/README.md build procedure — never the .so)
+server/runtime-go/*.so
+infra/nakama/data/modules/*.so

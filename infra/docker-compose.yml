@@ -64,6 +64,16 @@ services:
   nakama:
     image: registry.heroiclabs.com/heroiclabs/nakama:3.37.0
     container_name: kwetu-nakama
+    environment:
+      # Voice-token minting inputs for the Go runtime (server/runtime-go
+      # rpc.go envLookup: runtime env map first, then process env — compose
+      # sets the process env). Interpolated from the gitignored .env like
+      # every other secret; visible in `docker inspect` (same dev-stack
+      # caveat as the flags below). LIVEKIT_HOST is the browser-reachable
+      # TLS signaling URL — the Caddy /livekit route in infra/Caddyfile.
+      LIVEKIT_API_KEY: ${LIVEKIT_API_KEY}
+      LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET}
+      LIVEKIT_HOST: ${LIVEKIT_HOST}
     entrypoint: ["/bin/sh", "-ecx"]
     # ">-" folds everything below into ONE sh line. The nakama binary is NOT
     # on PATH in this image — full /nakama/nakama paths are required
@@ -83,11 +93,11 @@ services:
     volumes:
       # Non-secret server config (tracked file, ro).
       - ./nakama/config.yml:/nakama/config.yml:ro
-      # data_dir: runtime modules live in /nakama/data/modules/*.so. TODO
-      # (Phase 5 agent): build the Go runtime module with the Go version
-      # pinned for Nakama 3.37.0 and drop the .so here — Nakama auto-loads
-      # every *.so in data_dir/modules. Nothing is mounted into that
-      # directory tonight; see infra/nakama/data/modules/.
+      # data_dir: runtime modules live in /nakama/data/modules/*.so. The Go
+      # runtime module (server/runtime-go) is built and deployed here:
+      # Nakama auto-loads every *.so in data_dir/modules. Build + deploy
+      # procedure (toolchain pin and the mandatory -trimpath):
+      # server/runtime-go/README.md.
       - ./nakama/data:/nakama/data
     ports:
       # Client HTTP API + WebSocket (NETWORKING.md §3: normally reached via
