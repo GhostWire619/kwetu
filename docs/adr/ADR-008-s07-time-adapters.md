@@ -33,7 +33,8 @@ methods recorded there per probe] unless tagged otherwise. 29 probe tests pass
 (project flags + `resolveJsonModule` + `allowImportingTsExtensions`).
 
 **A — Leap table and known points (fills B-TIME-02).** The committed table
-`tools/spikes/s0.7/leap-seconds.json` (`kwetu.leap-table/1`) holds 28 entries, base
+`client/src/engine/leap-seconds.json` (`kwetu.leap-table/1`; spike path at decision time
+was `tools/spikes/s0.7/leap-seconds.json` — relocated 2026-09-06 per Decision 1) holds 28 entries, base
 TAI−UTC = 10 s at 1972-01-01 through 37 s at 2017-01-01 — the current offset 37 s is in force
 throughout 2026. Re-verified 2026-09-06 row-by-row against the live IANA file
 https://data.iana.org/time-zones/data/leap-seconds.list ('#$ last update' NTP 3992312697,
@@ -107,8 +108,9 @@ and its "UTC strings 69.184 s behind TDB as of 2020-12-01" is consistent with TA
 
 ## Decision
 
-1. **Adopt the ttClock module design** (spike-homed; Phase 1 re-homes it unchanged into the
-   engine): TT is f64 seconds since J2000 TT; conversions run in integer-ms civil arithmetic
+1. **Adopt the ttClock module design** (spike-homed; re-homed 2026-09-06 into
+   `client/src/engine/ttClock.ts` + `client/src/engine/leap-seconds.json` with the test suite at
+   `tests/engine/ttClock.test.ts` — content unchanged): TT is f64 seconds since J2000 TT; conversions run in integer-ms civil arithmetic
    (`tt = (posixMs + (TAI−UTC)·1000 + 32184 − civilJ2000Ms) / 1000`; the inverse by exact
    interval lookup over the table); `Date`/`Date.UTC`/`Date.parse` are used **only** to produce
    and parse POSIX civil labels and to bridge the wall clock — `ttNow()` is documented as a

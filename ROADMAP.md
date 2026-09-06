@@ -214,7 +214,7 @@ criterion; the rows formalize them).
 | ID | Quantity | Value | Tag |
 |---|---|---|---|
 | B-TIME-01 | TT↔UTC conversion residual vs astronomy-engine 2.1.19 across the leap-second span (max over 7 samples 1995–2026) | 0 s (0 day) | [MEASURED 2026-09-06, tools/spikes/s0.7/report.json] |
-| B-TIME-02 | Versioned leap-second table coverage (tools/spikes/s0.7/leap-seconds.json — durable asset, relocation pending) | 1972-01-01 (TAI−UTC 10 s) → 2017-01-01 (37 s), 28 rows; current offset 37 s; revision ierc-2026-09-06 | [MEASURED 2026-09-06, validateLeapTable(); source EXTERNAL — verified 2026-09-06, https://data.iana.org/time-zones/data/leap-seconds.list] |
+| B-TIME-02 | Versioned leap-second table coverage (client/src/engine/leap-seconds.json — promoted from the S0.7 spike per ADR-008) | 1972-01-01 (TAI−UTC 10 s) → 2017-01-01 (37 s), 28 rows; current offset 37 s; revision ierc-2026-09-06 | [MEASURED 2026-09-06, validateLeapTable(); source EXTERNAL — verified 2026-09-06, https://data.iana.org/time-zones/data/leap-seconds.list] |
 
 ### 3.9 Pinned external reference figures
 

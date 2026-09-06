@@ -8,8 +8,10 @@ import { writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { collectCrossCheckReport, runResumeProbe } from './crossCheck.ts';
-import { TIME_ADAPTER_REVISION, validateLeapTable } from './ttClock.ts';
-import leapTableJson from './leap-seconds.json' with { type: 'json' };
+// ttClock + the leap table were promoted to the engine per ADR-008; the report
+// writer stays in the spike dir (its report.json records the spike-time state).
+import { TIME_ADAPTER_REVISION, validateLeapTable } from '../../../client/src/engine/ttClock.ts';
+import leapTableJson from '../../../client/src/engine/leap-seconds.json' with { type: 'json' };
 
 const cross = collectCrossCheckReport();
 const resume = runResumeProbe();

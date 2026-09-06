@@ -16,7 +16,9 @@
  *     parts consume time.tt — BOTH must be right, which FromTerrestrialTime delivers.
  */
 import * as A from 'astronomy-engine';
-import { J2000_TT_POSIX_MS, UniverseClock, ttFromUtcIso, ulp64 } from './ttClock.ts';
+// ttClock was promoted to the engine per ADR-008; the cross-check harness stays
+// in the spike dir and imports the promoted module.
+import { J2000_TT_POSIX_MS, UniverseClock, ttFromUtcIso, ulp64 } from '../../../client/src/engine/ttClock';
 
 /** The library's own epoch constant, as a POSIX ms label (2.1.19: J2000 = new Date('2000-01-01T12:00:00Z')). */
 export const LIB_J2000_POSIX_MS = Date.UTC(2000, 0, 1, 12, 0, 0);

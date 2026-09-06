@@ -10,6 +10,10 @@
     "strict": true,
     "noUncheckedIndexedAccess": true,
     "exactOptionalPropertyTypes": true,
+    // JSON modules: client/src/engine/ttClock.ts imports the versioned leap
+    // second table (client/src/engine/leap-seconds.json) with an import
+    // attribute — promoted from the S0.7 spike per ADR-008.
+    "resolveJsonModule": true,
     // Skips error-checking of .d.ts internals only — our own code stays
     // fully checked. Needed at scaffold time: vite 8.2.2 / vitest 5.0.0
     // ship mutually incompatible declaration internals, and vitest 5.0.0's

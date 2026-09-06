@@ -1,5 +1,9 @@
 /**
- * S0.7 probe — TT universe-clock adapter (THROWAWAY spike code, CLAUDE.md carve-out).
+ * TT universe-clock adapter — the engine's authoritative time module.
+ *
+ * Origin: S0.7 spike (tools/spikes/s0.7); promoted here per ADR-008 with
+ * leap-seconds.json (Phase-1 engine core, 2026-09-06). The spike dir keeps the
+ * report writer (writeReport.ts) and the astronomy-engine cross-check harness.
  *
  * Implements the COORDINATE_SYSTEM.md §4 authoritative time contract and encodes
  * ADR-001 Decision 3 as testable semantics:

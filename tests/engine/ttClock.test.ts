@@ -1,10 +1,11 @@
 /**
- * S0.7 probe tests — TT universe clock (THROWAWAY spike tests, CLAUDE.md carve-out).
+ * TT universe clock tests — promoted from the S0.7 spike per ADR-008.
  *
  * Encodes the ADR-001 Decision 3 clock semantics and the COORDINATE_SYSTEM.md §4
  * time contract as executable checks, plus the S0.7 exit-criterion measurements:
  * known epochs, the 2017 leap boundary, astronomy-engine cross-check (<= 1e-9 day),
- * warp zero-divergence, and exact restart/resume.
+ * warp zero-divergence, and exact restart/resume. These are now regression
+ * coverage for client/src/engine/ttClock.ts, not throwaway probes.
  */
 import { describe, expect, it } from 'vitest';
 import * as A from 'astronomy-engine';
@@ -21,8 +22,8 @@ import {
   ulp64,
   validateLeapTable,
   type ClockStateV1,
-} from './ttClock.ts';
-import { LIB_J2000_POSIX_MS, collectCrossCheckReport, crossCheckRow, runResumeProbe, SAMPLE_TT_SECONDS } from './crossCheck.ts';
+} from '../../client/src/engine/ttClock';
+import { LIB_J2000_POSIX_MS, collectCrossCheckReport, crossCheckRow, runResumeProbe, SAMPLE_TT_SECONDS } from '../../tools/spikes/s0.7/crossCheck';
 
 // Deterministic fakes: the ONLY sim-time source in tests is the monotonic fake.
 function fakeHosts(wallStartMs: number) {

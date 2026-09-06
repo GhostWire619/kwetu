@@ -41,7 +41,7 @@ which ROADMAP §Budgets rows this fills.
 | [ADR-005](ADR-005-s04-ledger-ci-check.md) | S0.4 — the attribution ledger gate (R0–R8 checker) | accepted; hosted-CI wiring deferred per ADR-011 Decision 6 |
 | [ADR-006](ADR-006-s05-trademark-search.md) | S0.5 — "Kwetu" trademark search (partial; human gates remain) | proposed — conditional GO for internal use, NO-GO for public use until human searches close |
 | [ADR-007](ADR-007-s06-server-validation-contract.md) | S0.6 — server-validation contract (kinematic replay + drift thresholds) | accepted (measured); production thresholds re-measured at Phase 4 |
-| [ADR-008](ADR-008-s07-time-adapters.md) | S0.7 — TT universe clock, leap-second table, warp semantics | accepted (measured); SOI-handoff algorithm deferred to Phase 7; leap-seconds.json relocation pending |
+| [ADR-008](ADR-008-s07-time-adapters.md) | S0.7 — TT universe clock, leap-second table, warp semantics | accepted (measured); SOI-handoff algorithm deferred to Phase 7; ttClock + leap table promoted to client/src/engine 2026-09-06 |
 | [ADR-009](ADR-009-s08-aoi-cell-grid.md) | S0.8 — AoI cell-grid cost measurement | accepted (measured); B-AOI-03 re-gated to Phase 5 (ROADMAP §7.1) |
 | [ADR-010](ADR-010-s10-ui-i18n.md) | S0.10 — DOM HUD, PO→i18next pipeline, sw-first rules | accepted (measured); sw native-speaker review + font ledger row open |
 | [ADR-011](ADR-011-s11-ci-testing.md) | S0.11 — CI/testing, golden ephemeris fixtures, determinism | accepted (measured); CI wiring deferred (Decision 6); B-EPH-02 closed cross-platform 2026-09-06 |
