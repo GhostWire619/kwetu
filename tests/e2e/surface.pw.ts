@@ -26,6 +26,17 @@ test('surface mode walks, enters, drives, exits and resets', async ({ page }) =>
   await page.keyboard.up('KeyW');
   const carMoved = await page.evaluate(() => window.__kwetuSurface!.vehicle!);
   expect(Math.hypot(carMoved.x - carStart.x, carMoved.y - carStart.y)).toBeGreaterThan(0.1);
+  expect(carMoved.speed).toBeGreaterThan(0);
+  await expect.poll(async () => page.evaluate(() => {
+    const { yawRad } = window.__kwetuSurface!.camera!;
+    const { headingRad } = window.__kwetuSurface!.vehicle!;
+    return Math.abs(Math.atan2(Math.sin(yawRad - headingRad), Math.cos(yawRad - headingRad)));
+  })).toBeLessThan(0.2);
+
+  await page.keyboard.down('KeyS');
+  await page.waitForTimeout(1400);
+  await page.keyboard.up('KeyS');
+  await expect.poll(() => page.evaluate(() => window.__kwetuSurface!.vehicle!.speed)).toBeLessThan(0);
 
   await page.keyboard.press('KeyE');
   await expect.poll(() => page.evaluate(() => window.__kwetuSurface!.mode)).toBe('walk');

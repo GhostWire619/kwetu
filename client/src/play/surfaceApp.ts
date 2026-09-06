@@ -549,7 +549,10 @@ export class SurfaceApp {
     this.carGroup.quaternion.set(q.x, q.y, q.z, q.w);
     const target = this.mode === 'drive' ? car : p;
     if (this.mode === 'drive' && !this.controls.has('lookLeft') && !this.controls.has('lookRight')) {
-      this.cameraYaw = lerpAngle(this.cameraYaw, this.vehicleCtl.headingRadians + Math.PI, Math.min(1, DRIVE_LOOK_RECENTRE_PER_SECOND * FIXED_DT_SECONDS));
+      // cameraYaw is the direction from the camera towards its target. Matching
+      // the chassis heading therefore places the camera behind the car. Adding
+      // PI puts it in front and makes forward motion look like reversing.
+      this.cameraYaw = lerpAngle(this.cameraYaw, this.vehicleCtl.headingRadians, Math.min(1, DRIVE_LOOK_RECENTRE_PER_SECOND * FIXED_DT_SECONDS));
     }
     const dist = this.mode === 'drive' ? CAMERA_DISTANCE_DRIVE_METRES : CAMERA_DISTANCE_WALK_METRES;
     const horizontal = Math.cos(this.cameraPitch) * dist;
