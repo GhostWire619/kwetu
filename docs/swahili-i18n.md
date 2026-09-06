@@ -126,11 +126,20 @@ explicitly in every POT/PO we ship:
 - **Compile-step contract** (each item is a hard build failure):
   1. preserve `msgctxt` — the context survives into the emitted key;
   2. validate the `Plural-Forms` header against §3 (exact match);
-  3. emit **flat keys**: `<msgctxt><msgid>` joined with `/`
+  3. emit **flat keys**: joined `msgctxt` + `msgid` with `/`
      (`settings/audio/` + `Volume` → `settings/audio/Volume`);
   4. reject duplicate joined keys and printf-style placeholders in msgids;
   5. emit plural keys in i18next v4 form (`key_one` from `msgstr[0]`,
      `key_other` from `msgstr[1]`).
+
+  **Key-order correction [MEASURED 2026-09-06, tools/spikes/s0.10]:** the raw
+  `i18next-conv` 17.0.0 CLI emits flat keys as `msgid + ctxSeparator + msgctxt`
+  (msgid-FIRST — and an empty `ctxSeparator` is impossible, so the raw join can
+  never match this contract's `msgctxt/msgid` order). The contract above is
+  therefore implemented by the **build wrapper**, which re-keys the converter's
+  output into `msgctxt/msgid` order before the JSON is written. The wrapper is
+  a required pipeline component, not an optimization; productionizing it is a
+  Phase-1 deliverable (ADR-010 Decision 4).
 
   Flat keys are chosen over nested JSON because msgids are free English text:
   they legitimately contain `.`, spaces, and punctuation that would corrupt

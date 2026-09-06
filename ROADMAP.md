@@ -90,15 +90,17 @@ measured.
 | ID | Package / quantity | gzip transfer | Tag |
 |---|---|---|---|
 | B-LOAD-01 | three.js core build | 126,438 B | [MEASURED 2026-09-05, tools/spikes/s0.3/measure.mjs — vite 8.2.2 (rolldown/oxc) minified prod import, zlib gzipSync level 9] |
-| B-LOAD-02 | Rapier WASM (deterministic compat build — package split recorded in ARCHITECTURE.md §13) | 1,088,335 B as the compat build ships (WASM base64-inlined); standalone .wasm reference 772,479 B (not additive; inlining costs ≈ 316 KB gzip) — shipping config is an open Phase-1 ADR | [MEASURED 2026-09-05, tools/spikes/s0.3/measure.mjs] |
-| B-LOAD-03 | nakama-js | — | [PLACEHOLDER — gate: S0.3] |
-| B-LOAD-04 | livekit-client | — | [PLACEHOLDER — gate: S0.3] |
-| B-LOAD-05 | KTX2 / Basis transcoder (WASM + JS) | — | [PLACEHOLDER — gate: S0.3] |
-| B-LOAD-06 | meshopt decoder (WASM + JS) | — | [PLACEHOLDER — gate: S0.3] |
-| B-LOAD-07 | App shell (app TS + CSS, excluding all of the above) | 1,249,242 B as probed — includes astronomy-engine (19,257 B) and i18next (13,568 B), whose row placement is an open S0.3 decision; strict exclusive figure pending | [PLACEHOLDER — gate: S0.3 — partial 2026-09-05, tools/spikes/s0.3/measure.mjs] |
-| B-LOAD-08 | One locale bundle (EN or sw JSON; locales load lazily per docs/swahili-i18n.md) | — (probe fixture existed; per-locale production bundle pending a real locale build) | [PLACEHOLDER — gate: S0.3] |
-| B-LOAD-09 | **Total first-visit transfer** (sum of B-LOAD-01…08) | — | [PLACEHOLDER — gate: S0.3] |
-| B-LOAD-10 | Warm re-visit transfer (Cache API / IndexedDB hit, `navigator.storage.persist()` granted) | — | [PLACEHOLDER — gate: S0.3] |
+| B-LOAD-02 | Rapier WASM (deterministic compat build — package split recorded in ARCHITECTURE.md §13) | 1,088,335 B as the compat build ships (WASM base64-inlined); standalone .wasm reference 772,479 B (not additive; inlining costs ≈ 316 KB gzip) — shipping config decided by ADR-004 Decision 2 (compat build, base64-inlined); Phase-1 production-build confirmation pending, revisit trigger = B-RTT-09 × B-LOAD-09 | [MEASURED 2026-09-05, tools/spikes/s0.3/measure.mjs] |
+| B-LOAD-03 | nakama-js | 13,137 B | [MEASURED 2026-09-06, tools/spikes/s0.3/measure.mjs — byte probe, no server contacted] |
+| B-LOAD-04 | livekit-client | 131,745 B (E2EE worker excluded; its 68,605 B gzip9 build recorded separately in ADR-004) | [MEASURED 2026-09-06, tools/spikes/s0.3/measure.mjs] |
+| B-LOAD-05 | KTX2 / Basis transcoder (WASM + JS) | 262,678 B | [MEASURED 2026-09-06, tools/spikes/s0.3/measure.mjs] |
+| B-LOAD-06 | meshopt decoder (WASM + JS) | 7,804 B as shipped (7,231 B when bundled) | [MEASURED 2026-09-06, tools/spikes/s0.3/measure.mjs] |
+| B-LOAD-07 | App shell composition — definition revised 2026-09-06 (§7): the probed figure includes three + Rapier compat + B-LOAD-12/13; the pure app-TS+CSS-only figure moves to Phase 1 with the real build | 1,216,417 B derived (cross-check direct build 1,215,356 B; composition = B-LOAD-01 + B-LOAD-02 + B-LOAD-12 + B-LOAD-13 + app code) | [MEASURED 2026-09-06, derived subtraction + direct-build cross-check, tools/spikes/s0.3/report.json] |
+| B-LOAD-08 | One locale bundle (EN or sw JSON; locales load lazily per docs/swahili-i18n.md) | sw 1,346 / EN 1,210 (112-key spike fixture; production namespace re-measure at Phase 1) | [MEASURED 2026-09-06, tools/spikes/s0.3/measure.mjs] |
+| B-LOAD-09 | **Total first-visit transfer** — method revised 2026-09-06 (§7): ADR-004 inclusion list (shell 1,401,137 + Basis transcoder 262,678 + EN locale 1,210), NOT a naive sum of rows 01–08 (which would double-count) | 1,665,025 B provisional | [MEASURED 2026-09-06, derived sum over stated inclusion list] |
+| B-LOAD-10 | Warm re-visit transfer (Cache API / IndexedDB hit, `navigator.storage.persist()` granted) | — | [PLACEHOLDER — gate: Phase 1 (re-gated from S0.3 per ADR-004 — static probe cannot observe cache behaviour; §7)] |
+| B-LOAD-12 | astronomy-engine | 19,257 B (inside B-LOAD-07 composition; not additive) | [MEASURED 2026-09-06, tools/spikes/s0.3/measure.mjs] |
+| B-LOAD-13 | i18next | 13,568 B (inside B-LOAD-07 composition; not additive) | [MEASURED 2026-09-06, tools/spikes/s0.3/measure.mjs] |
 
 ### 3.2 Region payload per LOD tier — gate Phase 2
 
@@ -145,9 +147,9 @@ by extrapolation** — that is S0.8's explicit rule and §1.3 applies to any suc
 
 | ID | Quantity (unit) | Value | Tag |
 |---|---|---|---|
-| B-AOI-01 | AoI cell size (m) — measured optimum | — | [PLACEHOLDER — gate: S0.8] |
-| B-AOI-02 | Measured per-tick cost per synthetic presence at each candidate cell size (ms; full table lives in the S0.8 ADR) | — | [PLACEHOLDER — gate: S0.8] |
-| B-AOI-03 | Players per match handler, measured on the dev-box Nakama node (measured, not extrapolated) | — | [PLACEHOLDER — gate: S0.8] |
+| B-AOI-01 | AoI cell size (m) — measured optimum | 250 m (chosen from 4 candidate cell sizes × 4 presence counts × 2 distributions; headline config N=5,000 uniform, cs 250 m: p50 23.737 ms / p99 41.057 ms per tick) | [MEASURED 2026-09-06, tools/spikes/s0.8/report.json — full 32-config table in ADR-009] |
+| B-AOI-02 | Measured per-tick cost per synthetic presence at each candidate cell size (ms; full table lives in the S0.8 ADR) | headline: 5,000 presences, cs 250 m, uniform — p50 23.737 / p99 41.057 ms per 300+30-tick run; per-population sets (23/334), (129/2,411), (1,686/2,921) presences across AoI radii | [MEASURED 2026-09-06, tools/spikes/s0.8/report.json] |
+| B-AOI-03 | Players per match handler, measured on the dev-box Nakama node (measured, not extrapolated) | — | [PLACEHOLDER — gate: Phase 5 (re-gated from S0.8 per ADR-009 — requires a live Nakama node, which a synthetic micro-benchmark cannot provide; §7)] |
 | B-AOI-04 | Voice proximity subscription-culling set size at the chosen cell size (presences) | — | [PLACEHOLDER — gate: Phase 6] |
 | B-AOI-05 | AoI update bandwidth per client at the chosen cell size (kB/s, steady state) | — | [PLACEHOLDER — gate: Phase 5] |
 
@@ -191,7 +193,7 @@ record: the pinned Geofabrik Tanzania pbf timestamp each bake used.
 | B-PREC-01 | Max observed positional jitter at a 1e7 m origin offset (m) | 0.5 m stored globally in f32 vs 4.45e-7 m with floating origin (600-tick 1 m/s walk, dt 1/60) — 1.1e6× improvement | [MEASURED 2026-09-05, tools/spikes/s0.1/report.json; ADR-002] |
 | B-PREC-02 | Rendered-scene distance-from-origin ceiling (m) — verified f64/f32 boundary from S0.1 | 1e5–1e6 m confirmed: f32 spacing 6 cm at 1e6 m, 0.5 m at 1e7 m, 1 km at 1e10 m; f64 side floors at 30.5 µm ULP at 1.5e11 m — full ladder in ADR-002 §Evidence B; contact bubbles bounded separately (B-CONTACT-01) | [MEASURED 2026-09-05, tools/spikes/s0.1/report.json; ADR-002] |
 | B-EPH-01 | Golden-ephemeris residual: our propagator vs Skyfield/Horizons fixtures (arcmin; km at lunar distance) | — | [PLACEHOLDER — gate: Phase 7] |
-| B-EPH-02 | Determinism regression: state-hash agreement across platforms (bitwise pass/fail, per S0.11) | — | [PLACEHOLDER — gate: S0.11] |
+| B-EPH-02 | Determinism regression: state-hash agreement across platforms (bitwise pass/fail, per S0.11) | PASS — canonical sha256 `f127593e229cb26f942bade3bf849b8b21f77fed5baa909b3a7215074e2e9f7e` identical on Windows host (Ryzen 7 7445HS) and Linux x86-64 (`node:24-alpine`, image digest sha256:e67514e5d0f6c46656005e1b693b2ec9d52e80b641307de684d4a015ba7a4eaf); the same WASM f32 module ships on both, as ADR-011 predicted | [MEASURED 2026-09-06, tests/determinism executed on both platforms, hashes compared bitwise] |
 
 ### 3.8a Contact bubble — gate S0.1 (measured 2026-09-05; ADR-002)
 
@@ -203,6 +205,16 @@ Added per the ROADMAP §9 flight-revision acceptance matrix ("local contact radi
 | B-CONTACT-01 | Active contact-bubble extent bound (m) — tangent (0,0,-g) gravity direction error at the extent | ≤ 1e4 m: direction error 1.57e-3 rad, lateral 0.0154 m/s², 60 s ballistic miss ≈ 28 m; 100 km → 0.0157 rad / 277 m; 1e6 m → model invalid (0.156 rad) | [MEASURED 2026-09-05, tools/spikes/s0.1/report.json; ADR-002 Decision 4] |
 | B-CONTACT-02 | Rebase re-derivation residuals (+1000 m translate + 90° yaw: position m / velocity m/s / quaternion) | 2.44e-5 / 0 / 6.72e-8; contacts re-hold, joint drift 2.38e-7 m. A translation applied to accumulated f32 solver state is a proven contact-killer at 5e6 m (phantom free-fall, tunnelling) | [MEASURED 2026-09-05, tools/spikes/s0.1/report.json; ADR-002 Decision 2] |
 | B-CONTACT-03 | Resting-contact acceptance classes (penetration m) and joint anchor drift | 6.875e-5 m flat pad; 1.056e-3 m on a 15° ramp; fixed joint 0 m drift under 523.6 kg (600 steps, dt 1/60, Rapier defaults) | [MEASURED 2026-09-05, tools/spikes/s0.1/report.json; ADR-002 Decision 5] |
+
+### 3.8b Universe clock — gate S0.7 (measured 2026-09-06; ADR-008)
+
+Added with ADR-008's landing (the spike's fills were recorded against the S0.7 exit
+criterion; the rows formalize them).
+
+| ID | Quantity | Value | Tag |
+|---|---|---|---|
+| B-TIME-01 | TT↔UTC conversion residual vs astronomy-engine 2.1.19 across the leap-second span (max over 7 samples 1995–2026) | 0 s (0 day) | [MEASURED 2026-09-06, tools/spikes/s0.7/report.json] |
+| B-TIME-02 | Versioned leap-second table coverage (tools/spikes/s0.7/leap-seconds.json — durable asset, relocation pending) | 1972-01-01 (TAI−UTC 10 s) → 2017-01-01 (37 s), 28 rows; current offset 37 s; revision ierc-2026-09-06 | [MEASURED 2026-09-06, validateLeapTable(); source EXTERNAL — verified 2026-09-06, https://data.iana.org/time-zones/data/leap-seconds.list] |
 
 ### 3.9 Pinned external reference figures
 
@@ -244,6 +256,27 @@ NETWORKING.md §7 cite them.
 |---|---|---|---|
 | B-SIM-01 | Go-runtime `MatchLoop` CPU per region at peak presence (ms per tick, worst region) | — | [PLACEHOLDER — gate: Phase 5] |
 | B-NET-01 | Interpolation buffer depth (snapshot entries held before rendering; NETWORKING.md §7) | — | [PLACEHOLDER — gate: Phase 5] |
+
+### 3.11a Server-validation replay — gate S0.6 (measured 2026-09-06; ADR-007)
+
+Added with ADR-007's landing (ROADMAP §9 sanctions "powered-flight integration/replay
+drift and CPU cost (S0.6/S0.7)" rows). Contract: trapezoidal kinematic replay with
+drift thresholds; production thresholds + clamps remain Phase-4 proposals.
+
+| ID | Quantity | Value | Tag |
+|---|---|---|---|
+| B-VAL-01 | Kinematic-replay position drift vs recorded car path over a full synthetic session (max; p50 2.92e-5 / p95 4.12e-5 / p99 4.36e-5 m) | 4.524e-5 m | [MEASURED 2026-09-06, tools/spikes/s0.6/report.json] |
+| B-VAL-02 | Validator replay CPU cost (ticks/s) — Go 81.92 ns/tick, TS 140.7/149.8 ns/tick | 3,735,928 ticks/s (Go, single core) | [MEASURED 2026-09-06, tools/spikes/s0.6/report.json] |
+
+### 3.12 UI & i18n runtime — gate S0.10 (measured 2026-09-06; ADR-010)
+
+Added with ADR-010's landing. DOM-overlay-vs-canvas HUD decision evidence; spike
+string-set basis (production namespace re-measure owed at Phase 1).
+
+| ID | Quantity | Value | Tag |
+|---|---|---|---|
+| B-UI-01 | HUD update cost, DOM vs canvas (p50 ms per update at 200 elements; headless Chromium) — DOM 0.50 (mean 0.59), canvas 2.00; text-thrash hazard 68.3/71.3 ms; input→paint 9.3 ms; rAF peak 33.4 ms | DOM 0.50 / canvas 2.00 ms p50 | [MEASURED 2026-09-06, tools/spikes/s0.10/report.json] |
+| B-I18N-01 | Swahili/English locale bundle size ratio (raw / gzip9, spike string set) | 1.056 raw / 1.325 gzip9 (EN 1,825 B / sw 1,927 B raw) | [MEASURED 2026-09-06, tools/spikes/s0.10/report.json] |
 
 ## 4. Phase gates
 
@@ -395,13 +428,13 @@ Each spike lands exactly one ADR in docs/adr/ and either fills its named §Budge
 
 - **Question**: can a Go-runtime validator accept or reject client positions without full physics, and with how much drift?
 - **Exit criterion**: an ADR plus the written validator contract — a recorded car path replayed against the closed-form kinematic model, the drift distribution measured and recorded, and an explicit statement of what the server will NOT do (no server-side Rapier). NETWORKING.md must not promise server-authoritative physics beyond this contract.
-- **Fills Budgets rows**: the drift figures, recorded in the ADR and referenced by the Phase 4/5 gates.
+- **Fills Budgets rows**: B-VAL-01, B-VAL-02 (created in §3.11a at ADR-007 landing; previously "the drift figures, recorded in the ADR").
 
 ### S0.7 — Time-warp / universe-clock semantics
 
 - **Question**: who owns the one shared universe clock; how do TT and UTC relate (leap-second policy); how does warp behave in shared space; how do bodies hand off between physics and rails?
 - **Exit criterion**: a measured verification ADR for ADR-001 clock authority, TT adapters, restart and shared-time semantics (CONTACT_LOCAL / FLIGHT_DYNAMIC / ORBIT_COAST, independent of clock speed), and the SOI handoff design — written well enough to gate NETWORKING.md and the world-state schema. A Phase-0 deliverable per COORDINATE_SYSTEM.md.
-- **Fills Budgets rows**: none (semantics, not measurement).
+- **Fills Budgets rows**: B-TIME-01, B-TIME-02 (created in §3.8b at ADR-008 landing; the ADR flagged the addition — previously "none (semantics, not measurement)").
 
 ### S0.8 — AoI micro-benchmark
 
@@ -419,7 +452,7 @@ Each spike lands exactly one ADR in docs/adr/ and either fills its named §Budge
 
 - **Question**: DOM or canvas for UI; does the PO→i18next pipeline hold; which OFL font covers Swahili fully?
 - **Exit criterion**: an ADR choosing DOM vs canvas; the i18n pipeline (gettext PO source of truth → i18next JSON) demonstrated end-to-end with an EN + sw round trip in CI and the corrupted Plural-Forms header lint in place (nplurals=2 set explicitly); an OFL font with full Swahili coverage chosen and pinned.
-- **Fills Budgets rows**: none (decision + pipeline proof).
+- **Fills Budgets rows**: B-UI-01, B-I18N-01 (created in §3.12 at ADR-010 landing; previously "none (decision + pipeline proof)").
 
 ### S0.11 — CI/testing
 
@@ -464,6 +497,37 @@ Known gaps from the research phase, mapped to the spike or written decision that
 4. **Renumbering is forbidden**: phase and spike IDs are canonical identifiers used by other docs and ADRs; new spikes append as S0.13 and beyond.
 5. **Tag discipline is a defect class**: an untagged performance assertion anywhere is a defect (§1.3); the review pass hunts for restated numbers and untagged claims.
 6. **Mirrors reference, never fork**: MASTER_PROMPT.md section H (roadmap summary, DoD, risk register) and CLAUDE.md's pointer table must point at this document; the consistency critic checks phase numbering across the suite.
+
+### 7.1 Change-control log
+
+Each entry = a loosening or re-gate, with its recording ADR (rule 2). Tightenings are
+recorded in the phase's gate entry and not listed here.
+
+- **2026-09-06 — B-LOAD-07 definition revised.** The probed "app shell" figure includes
+  three + Rapier compat + astronomy-engine + i18next; the pure app-TS+CSS figure moves
+  to Phase 1 with the real build. Recording ADR: ADR-004 (Decision 4).
+- **2026-09-06 — B-LOAD-09 method revised.** Total transfer = ADR-004 inclusion list
+  (shell + Basis transcoder + locale), not a naive sum of rows 01–08 (double-counts).
+  Recording ADR: ADR-004.
+- **2026-09-06 — B-LOAD-02 shipping decision made** (compat build, base64-inlined);
+  Phase-1 production confirmation pending; revisit trigger B-RTT-09 × B-LOAD-09.
+  Recording ADR: ADR-004 (Decision 2).
+- **2026-09-06 — B-LOAD-10 re-gated S0.3 → Phase 1.** A static byte probe cannot
+  observe warm-cache behaviour; closes at the first real CDN/client-cache integration.
+  Recording ADR: ADR-004.
+- **2026-09-06 — B-AOI-03 re-gated S0.8 → Phase 5.** Requires a live Nakama node;
+  a synthetic micro-benchmark cannot measure players-per-handler. Recording ADR: ADR-009.
+- **2026-09-06 — S0.5 fallback-name shortlist deferred to the human trademark gate.**
+  Drafting it before the manual BRELA/KiPI/WIPO searches would be decoration.
+  Recording ADR: ADR-006 (Decision 3).
+- **2026-09-06 — S0.9 (hosting + RTT probes) re-gated to the hosting decision
+  (before Alpha).** The probes require physically-located vantage points (Dar es
+  Salaam, Zanzibar) which no automated run can synthesize; B-RTT-01…09 /
+  B-COST-01…03 stay empty until run for real. Recording ADR: ADR-013.
+- **2026-09-06 — B-EPH-01 scope upheld, ADR-011's library residual NOT written into
+  the row.** B-EPH-01 stays Phase-7-gated (our propagator vs fixtures); the
+  astronomy-engine-vs-skyfield residual (0.345 arcmin Moon / 46.3 km) lives in
+  ADR-011 and the golden fixture. Landing decision by the orchestrator.
 
 ## 8. Development environment & tooling
 

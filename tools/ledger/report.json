@@ -1,0 +1,376 @@
+{
+  "spike": "S0.4",
+  "title": "license-ledger CI check — rule inventory, dependency coverage, version drift",
+  "generated": "2026-09-06T01:19:00",
+  "generatedUtc": "2026-09-05T22:19:00.985Z",
+  "host": {
+    "platform": "win32",
+    "osRelease": "10.0.26200",
+    "node": "v24.13.0",
+    "totalMemGB": 15.2
+  },
+  "checker": {
+    "file": "tools/ledger/check.mjs",
+    "selfTestsFile": "tools/ledger/check.test.mjs",
+    "exitCodes": {
+      "0": "pass",
+      "1": "violation",
+      "2": "structural error"
+    },
+    "rules": [
+      {
+        "id": "R0",
+        "name": "required documents present",
+        "status": "pass"
+      },
+      {
+        "id": "R1",
+        "name": "ledger rows: id + license + attribution cell (y resolves, n explains)",
+        "status": "warn"
+      },
+      {
+        "id": "R2",
+        "name": "blocked-verdict refusal retained (asset-01)",
+        "status": "pass"
+      },
+      {
+        "id": "R3",
+        "name": "generated assets: AI columns present and filled",
+        "status": "pass"
+      },
+      {
+        "id": "R4",
+        "name": "DATA_SOURCES.md provenance rows: source + license + pin",
+        "status": "pass"
+      },
+      {
+        "id": "R5",
+        "name": "doc-quoted strings byte-match ATTRIBUTIONS.md (README + MASTER_PROMPT §44)",
+        "status": "pass"
+      },
+      {
+        "id": "R6",
+        "name": "ATTRIBUTIONS.md# anchor references resolve",
+        "status": "pass"
+      },
+      {
+        "id": "R7",
+        "name": "package.json dependencies covered by code-NN ledger rows (transitive deps not checked)",
+        "status": "pass"
+      },
+      {
+        "id": "R8",
+        "name": "ledger pin = package-lock.json resolved version (no drift)",
+        "status": "warn"
+      }
+    ],
+    "run": {
+      "result": "PASS",
+      "exitCode": 0,
+      "violationCount": 0,
+      "warningCount": 3,
+      "violations": [],
+      "warnings": [
+        {
+          "rule": "R1",
+          "text": "data-06: attribution y deferred to a named trigger — \"y — attribution string to be added with the first GeoNames row (per GeoNames CC BY 4.0 terms, with the pinned dump date)\""
+        },
+        {
+          "rule": "R1",
+          "text": "data-07: attribution y deferred to a named trigger — \"y — lands in the CI-generated table (ATTRIBUTIONS.md)\""
+        },
+        {
+          "rule": "R8",
+          "text": "code-11 (delatin): pin cell carries no comparable version (\"[PLACEHOLDER — pin at first code commit]\") — drift check deferred until the pin lands (pin at first code commit)"
+        }
+      ],
+      "durationMs": 97.1,
+      "method": "checkAll(collectRepoInputs(root)) timed with process.hrtime.bigint()"
+    }
+  },
+  "selfTests": {
+    "count": 45,
+    "passed": 45,
+    "failed": 0,
+    "success": true,
+    "method": "node node_modules/vitest/vitest.mjs run tools/ledger/check.test.mjs --reporter=json (vitest-run.json, deleted after reading)"
+  },
+  "dependencyCoverage": {
+    "declaredPackages": 15,
+    "codeLedgerRows": 31,
+    "transitiveDependenciesChecked": false,
+    "uncoveredPackages": [],
+    "packages": [
+      {
+        "name": "@dimforge/rapier3d-deterministic-compat",
+        "section": "dependencies",
+        "packageJsonSpec": "0.20.0",
+        "rows": [
+          "code-27"
+        ],
+        "lockfileResolved": "0.20.0",
+        "checks": [
+          {
+            "row": "code-27",
+            "ledgerPin": "0.20.0",
+            "lockfileResolved": "0.20.0",
+            "verdict": "match"
+          }
+        ]
+      },
+      {
+        "name": "@heroiclabs/nakama-js",
+        "section": "dependencies",
+        "packageJsonSpec": "2.8.0",
+        "rows": [
+          "code-04"
+        ],
+        "lockfileResolved": "2.8.0",
+        "checks": [
+          {
+            "row": "code-04",
+            "ledgerPin": "2.8.0",
+            "lockfileResolved": "2.8.0",
+            "verdict": "match"
+          }
+        ]
+      },
+      {
+        "name": "astronomy-engine",
+        "section": "dependencies",
+        "packageJsonSpec": "2.1.19",
+        "rows": [
+          "code-03"
+        ],
+        "lockfileResolved": "2.1.19",
+        "checks": [
+          {
+            "row": "code-03",
+            "ledgerPin": "2.1.19",
+            "lockfileResolved": "2.1.19",
+            "verdict": "match"
+          }
+        ]
+      },
+      {
+        "name": "i18next",
+        "section": "dependencies",
+        "packageJsonSpec": "26.4.2",
+        "rows": [
+          "code-07"
+        ],
+        "lockfileResolved": "26.4.2",
+        "checks": [
+          {
+            "row": "code-07",
+            "ledgerPin": "26.4.2",
+            "lockfileResolved": "26.4.2",
+            "verdict": "match"
+          }
+        ]
+      },
+      {
+        "name": "livekit-client",
+        "section": "dependencies",
+        "packageJsonSpec": "2.22.2",
+        "rows": [
+          "code-05"
+        ],
+        "lockfileResolved": "2.22.2",
+        "checks": [
+          {
+            "row": "code-05",
+            "ledgerPin": "2.22.2",
+            "lockfileResolved": "2.22.2",
+            "verdict": "match"
+          }
+        ]
+      },
+      {
+        "name": "three",
+        "section": "dependencies",
+        "packageJsonSpec": "0.185.1",
+        "rows": [
+          "code-01"
+        ],
+        "lockfileResolved": "0.185.1",
+        "checks": [
+          {
+            "row": "code-01",
+            "ledgerPin": "0.185.1",
+            "lockfileResolved": "0.185.1",
+            "verdict": "match"
+          }
+        ]
+      },
+      {
+        "name": "@playwright/test",
+        "section": "devDependencies",
+        "packageJsonSpec": "1.63.0",
+        "rows": [
+          "code-28"
+        ],
+        "lockfileResolved": "1.63.0",
+        "checks": [
+          {
+            "row": "code-28",
+            "ledgerPin": "1.63.0",
+            "lockfileResolved": "1.63.0",
+            "verdict": "match"
+          }
+        ]
+      },
+      {
+        "name": "@types/node",
+        "section": "devDependencies",
+        "packageJsonSpec": "^24.13.3",
+        "rows": [
+          "code-25"
+        ],
+        "lockfileResolved": "24.13.3",
+        "checks": [
+          {
+            "row": "code-25",
+            "ledgerPin": "24.13.3",
+            "lockfileResolved": "24.13.3",
+            "verdict": "match"
+          }
+        ]
+      },
+      {
+        "name": "@types/three",
+        "section": "devDependencies",
+        "packageJsonSpec": "^0.185.4",
+        "rows": [
+          "code-26"
+        ],
+        "lockfileResolved": "0.185.4",
+        "checks": [
+          {
+            "row": "code-26",
+            "ledgerPin": "0.185.4",
+            "lockfileResolved": "0.185.4",
+            "verdict": "match"
+          }
+        ]
+      },
+      {
+        "name": "delatin",
+        "section": "devDependencies",
+        "packageJsonSpec": "0.2.0",
+        "rows": [
+          "code-11",
+          "code-30"
+        ],
+        "lockfileResolved": "0.2.0",
+        "checks": [
+          {
+            "row": "code-11",
+            "ledgerPin": null,
+            "lockfileResolved": "0.2.0",
+            "verdict": "deferred (row unpinned)"
+          },
+          {
+            "row": "code-30",
+            "ledgerPin": "0.2.0",
+            "lockfileResolved": "0.2.0",
+            "verdict": "match"
+          }
+        ]
+      },
+      {
+        "name": "geotiff",
+        "section": "devDependencies",
+        "packageJsonSpec": "3.0.5",
+        "rows": [
+          "code-31"
+        ],
+        "lockfileResolved": "3.0.5",
+        "checks": [
+          {
+            "row": "code-31",
+            "ledgerPin": "3.0.5",
+            "lockfileResolved": "3.0.5",
+            "verdict": "match"
+          }
+        ]
+      },
+      {
+        "name": "i18next-conv",
+        "section": "devDependencies",
+        "packageJsonSpec": "17.0.0",
+        "rows": [
+          "code-29"
+        ],
+        "lockfileResolved": "17.0.0",
+        "checks": [
+          {
+            "row": "code-29",
+            "ledgerPin": "17.0.0",
+            "lockfileResolved": "17.0.0",
+            "verdict": "match"
+          }
+        ]
+      },
+      {
+        "name": "typescript",
+        "section": "devDependencies",
+        "packageJsonSpec": "^7.0.2",
+        "rows": [
+          "code-22"
+        ],
+        "lockfileResolved": "7.0.2",
+        "checks": [
+          {
+            "row": "code-22",
+            "ledgerPin": "7.0.2",
+            "lockfileResolved": "7.0.2",
+            "verdict": "match"
+          }
+        ]
+      },
+      {
+        "name": "vite",
+        "section": "devDependencies",
+        "packageJsonSpec": "^8.2.2",
+        "rows": [
+          "code-23"
+        ],
+        "lockfileResolved": "8.2.2",
+        "checks": [
+          {
+            "row": "code-23",
+            "ledgerPin": "8.2.2",
+            "lockfileResolved": "8.2.2",
+            "verdict": "match"
+          }
+        ]
+      },
+      {
+        "name": "vitest",
+        "section": "devDependencies",
+        "packageJsonSpec": "^5.0.0",
+        "rows": [
+          "code-24"
+        ],
+        "lockfileResolved": "5.0.0",
+        "checks": [
+          {
+            "row": "code-24",
+            "ledgerPin": "5.0.0",
+            "lockfileResolved": "5.0.0",
+            "verdict": "match"
+          }
+        ]
+      }
+    ],
+    "method": "parsePackageJson(package.json) × rowNameMatches(name cell) over classifyRows(parseTpaTables(THIRD_PARTY_ASSETS.md).code)"
+  },
+  "versionDrift": {
+    "pinsCompared": 15,
+    "pinsDeferred": 1,
+    "pinsDrifted": 0,
+    "drifted": [],
+    "method": "parsePinVersion(ledger pin cell) vs resolvedLockVersion(package-lock.json) — packages[\"node_modules/<name>\"].version, lockfileVersion-1 dependencies fallback"
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "locales": {
+    "en": {
+      "poEntries": 43,
+      "fuzzyEntries": 0,
+      "compiled": {
+        "path": "locales/en/translation.json",
+        "keys": 45,
+        "rawBytes": 1825,
+        "gzip9Bytes": 551,
+        "convRoundTripVerifiedKeys": 45
+      }
+    },
+    "sw": {
+      "poEntries": 43,
+      "fuzzyEntries": 43,
+      "compiled": {
+        "path": "locales/sw/translation.json",
+        "keys": 45,
+        "rawBytes": 1927,
+        "gzip9Bytes": 730,
+        "convRoundTripVerifiedKeys": 45
+      }
+    }
+  },
+  "checks": {
+    "canonicalPluralForms": "nplurals=2; plural=(n != 1);",
+    "placeholderParity": "pass",
+    "crossLocaleKeyParity": "pass",
+    "flatKeys": true,
+    "bundleRatio": {
+      "swVsEnRaw": 1.0559,
+      "swVsEnGzip9": 1.3249
+    }
+  }
+}

@@ -1,0 +1,69 @@
+<!doctype html>
+<!--
+  S0.11 three.js render fixture — served by the vite dev server (port 5199)
+  so the bare 'three' import resolves to the pinned node_modules copy
+  (three 0.185.1). Renders one 2-triangle quad, captures a readPixels patch
+  synchronously after render (no compositor race), and exposes the result on
+  window.__threeRender for three-render-smoke.spec.ts.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Kwetu S0.11 three render fixture</title>
+    <style>
+      body { margin: 0; background: #111; }
+      canvas { display: block; width: 128px; height: 128px; }
+    </style>
+  </head>
+  <body>
+    <canvas id="c" width="128" height="128"></canvas>
+    <script type="module">
+      import * as THREE from 'three';
+
+      const canvas = document.getElementById('c');
+      const renderer = new THREE.WebGLRenderer({
+        canvas,
+        antialias: false,
+        preserveDrawingBuffer: true,
+      });
+      renderer.setSize(128, 128, false);
+
+      const scene = new THREE.Scene();
+      const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 10);
+      camera.position.set(0, 0, 2);
+
+      // One full-canvas quad (2 triangles), flat colour 0xff4080.
+      const geometry = new THREE.BufferGeometry();
+      geometry.setAttribute(
+        'position',
+        new THREE.BufferAttribute(
+          new Float32Array([-1, -1, 0, 1, -1, 0, 1, 1, 0, -1, -1, 0, 1, 1, 0, -1, 1, 0]),
+          3,
+        ),
+      );
+      const material = new THREE.MeshBasicMaterial({ color: 0xff4080 });
+      const quad = new THREE.Mesh(geometry, material);
+      scene.add(quad);
+
+      renderer.render(scene, camera);
+
+      const gl = renderer.getContext();
+      const px = new Uint8Array(4 * 4 * 4);
+      gl.readPixels(62, 62, 4, 4, gl.RGBA, gl.UNSIGNED_BYTE, px);
+      let nonBlack = 0;
+      for (let i = 0; i < px.length; i += 4) {
+        if (px[i] > 0 || px[i + 1] > 0 || px[i + 2] > 0) nonBlack++;
+      }
+
+      window.__threeRender = {
+        threeRevision: THREE.REVISION,
+        isWebGL2: renderer.capabilities.isWebGL2,
+        drawCalls: renderer.info.render.calls,
+        triangles: renderer.info.render.triangles,
+        nonBlackPixels: nonBlack,
+        readbackRgba: [px[0], px[1], px[2], px[3]],
+        contextLost: renderer.getContext().isContextLost(),
+      };
+    </script>
+  </body>
+</html>

@@ -1,0 +1,65 @@
+# ADR-010: S0.10 — DOM overlay for UI text, the PO→i18next pipeline, and the Swahili-capable UI font
+
+- **Status**: accepted (measured 2026-09-06; the sw-string native-speaker review gate and the font import-commit ledger row are explicitly open — see Consequences)
+- **Date**: 2026-09-06
+- **Deciders**: S0.10 keystone spike (orchestrated Phase-0 agent wave). Probes, report and regenerable measurements at `tools/spikes/s0.10/` (`report.json` via `node tools/spikes/s0.10/measure.mjs`; locale artifacts via `node tools/spikes/s0.10/i18n/compile.mjs`; vitest suite `tools/spikes/s0.10/i18n/i18n.test.ts`). Probe host: Windows 11 dev box (AMD Ryzen 7 7445HS, 15.2 GB RAM), headless Chromium 153.0.8010.12 via Playwright 1.63.0, SwiftShader software GL (renderer string recorded in `report.json`).
+
+## Context
+
+S0.10 asks: DOM or canvas for UI; does the PO→i18next pipeline hold; which OFL font covers Swahili fully. `docs/swahili-i18n.md` already directs that "i18next drives the DOM overlay UI on top of the three.js canvas" and makes sw a first-class language bound from the first UI change — but that direction assumed the DOM verdict; this spike had to measure it rather than assume it, prove the gettext PO → i18next JSON pipeline end-to-end in CI (including the corrupted-`Plural-Forms`-header lint of §3), and pick the OFL font. The shape constraint: a text-heavy HUD of ~200 live-updating stat elements must fit inside the 16.7 ms/frame 60 Hz budget alongside the three.js render, and Swahili copy runs longer than English (§1 expansion assumption).
+
+## Evidence
+
+All performance values [MEASURED 2026-09-06, headless Chromium via Playwright; full method + per-mode distributions in `tools/spikes/s0.10/report.json`, regenerable via `node tools/spikes/s0.10/measure.mjs`]. Headless caveats: GL is SwiftShader software (unmasked renderer string recorded), frame pacing is BeginFrame-driven (~60 Hz at the 800×600 probe viewport; 1280×800 paced at only ~9.5 fps and was rejected), and the input→paint figure is a proxy — last input event's `timeStamp` minus the NEXT `requestAnimationFrame` timestamp, sampled while the runner drives 60 synthetic mouse moves per window. Only the DOM-vs-canvas relative comparison and the detector behaviour carry decision weight; absolute host-GPU figures are not claimed.
+
+**A — HUD probe: 200 live-updating stat elements over a three.js scene (wireframe icosahedron + 24 orbiting cubes + 600 point stars), three modes × 300 measured frames after 60 warmup frames, 5 cols × 40 rows, 12 px/14 px system-ui.** Modes: (a) DOM overlay — 200 `<div class="stat">` (400 nodes incl. label/value spans), per-frame `textContent` update of the 200 value spans; (b) canvas-2D overlay — one `clearRect` + 200 label/value `fillText` pairs per frame; (c) DOM-thrash hazard demo — same DOM plus a forced `offsetTop` read after every write (200 forced reflows/frame by construction).
+
+| Metric (ms) | DOM | DOM-thrash | Canvas-2D |
+|---|---|---|---|
+| HUD update cost p50 / mean / p95 / max | 0.50 / 0.59 / 1.2 / 1.9 | 68.3 / 71.3 / 103.3 / 136.2 | 2.00 / 2.06 / 3.2 / 4.6 |
+| rAF frame interval p50 / max | 16.70 / 33.4 | 83.3 / 133.4 | 16.70 / 16.8 |
+| input→paint proxy p50 / max | 9.3 / 28.4 | 30.1 / 99.8 | 9.0 / 15.5 |
+
+DOM text updates are ~4× cheaper than canvas `fillText` at this element count (0.50 vs 2.00 ms p50) and both sit inside the 16.7 ms budget; the DOM mode's 33.4 ms max is one dropped frame in 300. The `overBudget` counters in `report.json` (threshold 16.667 ms) are a pacing artifact — BeginFrame paces at 16.70 ms, so ~2/3 of healthy frames "exceed" the nominal budget in both healthy modes; the p50/max columns are the signal. Latency in healthy modes is frame-pacing-bound and statistically indistinguishable (9.3 vs 9.0 ms p50); only the thrash mode degrades it (30.1 ms p50, 99.8 ms max).
+
+**Layout-thrash detector**: PerformanceObserver `long-animation-frame` (LoAF) works in this Chromium (supported flag true). It fired exactly where frames were pathological — 0 entries in healthy DOM mode, 356 entries in thrash mode (longest frame 140.4 ms), 3 stray entries in canvas mode — making it a usable CI smoke for catastrophic jank, but it only reports frames > 50 ms and the forced-reflow cost surfaced in script time, not in `blockingStyleLayout` (which stayed ≤ 0.1 ms per entry). The per-frame forced-reflow count used an instrumented-by-construction count (0 DOM / 0 canvas / 200 thrash).
+
+**B — i18n pipeline end-to-end.** 43 msgids across `main_menu/`, `settings/`, `settings/audio/`, `hud/` → 45 compiled flat keys per locale (2 plural entries × `_one`/`_other`). EN and sw both stored as PO and compiled (§1 principle 5); every sw msgstr carries `#, fuzzy` (agent-drafted, pending the native-speaker review gate — nothing here is approved copy). i18next 26.4.2 loads the compiled JSON with `keySeparator: false` / `nsSeparator: false`, translates EN + sw, resolves plurals (`Mchezaji 1 mtandaoni` / `Wachezaji 3 mtandaoni`), and the no-raw-keys fixture pass (a component map referencing all 3 screens) resolves every key in BOTH locales. 14/14 vitest tests pass (`npx vitest run tools/spikes/s0.10/i18n/i18n.test.ts`). The lint parses the header of every `.po` and rejects anything but the exact canonical line `Plural-Forms: nplurals=2; plural=(n != 1);` — unit-tested against the §3 corruption case (an Arabic `nplurals=6` expression inside a sw-labelled file) with a pointed failure message, and against a missing header.
+
+Toolchain finding [MEASURED 2026-09-06, i18next-conv 17.0.0 source + probe output]: the CLI joins compiled keys as `msgid + ctxSeparator + msgctxt` (`gettext-converter` `esm/js2i18next.js` line 119) — the opposite order of the owning doc's compile contract (`<msgctxt><msgid>` joined with `/`), and an empty `--ctxSeparator` is impossible (`options.ctxSeparator || '_'`), so the CLI alone cannot emit the contract's ctx-first flat keys. The spike's compile wrapper therefore spawns the CLI (PO→JSON parse proof, all flags explicit) and re-keys its output to the contract using an authoritative `gettext-parser` parse, asserting a per-value round-trip against the CLI's own output (45/45 keys verified per locale). This discrepancy needs the owning doc updated by the orchestrator (this spike may not edit `docs/swahili-i18n.md`).
+
+**Bundle sizes** [MEASURED 2026-09-06, byte length + zlib gzip level 9 over the compiled artifacts]: EN `locales/en/translation.json` 1 825 B raw / 551 B gzip9; sw `locales/sw/translation.json` 1 927 B raw / 730 B gzip9 → sw/EN ratio 1.056 raw, 1.325 gzip9 on this string set. sw raw expansion (+5.6%) is inside the doc's 10–20% §1 assumption here; the gzip ratio is higher because EN's redundancy compresses better — a per-locale transport fact, not a layout risk; the §9 length-diff report remains the gate for overflow. One compiled locale adds well under 1 KB gzip9 on this set; load-budget rows stay owned by S0.3.
+
+**C — Font.** Pick: **Noto Sans** (the notofonts `latin-greek-cyrillic` build), **SIL Open Font License 1.1** [EXTERNAL, verified 2026-09-06, https://raw.githubusercontent.com/notofonts/latin-greek-cyrillic/main/LICENSE — "SIL Open Font License, Version 1.1", Copyright 2022 The Noto Project Authors]; latest release `NotoSans-v2.015` (commit `c4a321e`) [EXTERNAL, verified 2026-09-06, https://github.com/notofonts/latin-greek-cyrillic/releases/latest]. Swahili coverage argument: sw orthography is pure Latin ASCII — the 24-letter alphabet (a–z minus q and x, plus the `ng'` digraph), no diacritics — so full sw coverage equals full Basic Latin coverage, which Noto Sans provides, along with the Latin-1 and General Punctuation characters the shell UI actually uses (e.g. U+2026 `…` in "Loading world…"). Noto Sans additionally carries the wider Latin needs of neighbouring East African languages, which later locale additions would want.
+
+## Decision
+
+1. **DOM overlay for all shell UI and HUD text.** i18next drives it per `docs/swahili-i18n.md`. Canvas-2D is rejected for UI text: ~4× the update cost at 200 elements (2.00 vs 0.50 ms p50), and it would force rebuilding text wrapping, styling, accessibility and the i18n layer that the DOM provides for free. DOM headroom at 200 elements is ~33× inside the 16.7 ms budget on this host (headless — real-display re-check rides the Phase-3 hardware baseline if numbers diverge).
+2. **Canvas stays for in-world nametags only — as canvas-textured sprites inside the 3D scene**, not as a 2D overlay: nametags must depth-sort against world geometry and scale with distance, which a DOM/canvas overlay cannot do. No UI chrome may render through that path (hard-coded-text hazard; the i18n layer never sees it).
+3. **HUD update pattern is write-only.** Never interleave layout reads with writes in the update loop: the measured cost of doing so is 68.3 ms/frame (≈136× the clean pattern) and the input→paint proxy degrades 9.3 → 30.1 ms p50. LoAF is adopted only as an optional CI jank smoke (it catches > 50 ms frames); the review-level rule is "no `offset*`/`getComputedStyle` reads in per-frame HUD code".
+4. **PO source of truth, compiled via i18next-conv + contract wrapper.** File layout for Phase 0 (a single `default` domain; the §2 per-domain `ui/items/world` split lands with the Phase-1 build wrapper):
+
+   ```
+   locales/
+     po/en.default.po   po/sw.default.po    # source of truth; msgctxt = screen path (snake_case, trailing slash)
+     en/translation.json  sw/translation.json  # compiled artifacts, regenerated by tools/spikes/s0.10/i18n/compile.mjs
+   ```
+
+   Exact commands (regenerable; the wrapper spawns the CLI with these flags explicitly — never tool defaults — then re-keys to the contract and verifies round-trip):
+
+   ```bash
+   node tools/spikes/s0.10/i18n/compile.mjs        # PO -> locales/{en,sw}/translation.json (spawns the CLI per locale)
+   # per-locale CLI invocation inside the wrapper:
+   npx i18next-conv -l sw -s locales/po/sw.default.po -t <tmp>/sw.conv.json -k '##' --ctxSeparator '_' --compatibilityJSON v4 --noDate --quiet
+   node tools/spikes/s0.10/measure.mjs             # regenerates tools/spikes/s0.10/report.json (HUD probe + bundle sizes)
+   npx vitest run tools/spikes/s0.10/i18n/i18n.test.ts
+   ```
+
+   Compile-step contract enforced by the wrapper and the tests: exact `Plural-Forms: nplurals=2; plural=(n != 1);` header on every PO (never "parse it anyway"); msgctxt preserved and screen-formatted; flat ctx-first keys (`settings/audio/` + `Master Volume` → `settings/audio/Master Volume`); i18next v4 plural suffixes (`msgstr[0]` → `_one`, `msgstr[1]` → `_other`); printf-style placeholders rejected (`{{token}}` only); token parity EN↔sw; key uniqueness; cross-locale key parity; UI strings land EN + sw in the same change with sw drafts flagged `fuzzy`.
+5. **UI font: Noto Sans** (`notofonts/latin-greek-cyrillic`, release `NotoSans-v2.015`, OFL 1.1), weights Regular + Medium + Bold (italics if UI needs them). Obligations at import: ship the OFL licence file alongside the font files; keep the copyright/liability lines and (if ever modified) the reserved font name and rename rule; no standalone resale of the font files; ledger row + attribution in `THIRD_PARTY_ASSETS.md`/`ATTRIBUTIONS.md` with the licence fetched at the pinned commit (S0.4 gate). No font file is committed by this spike.
+
+## Consequences
+
+Fills ROADMAP §Budgets **B-UI-01** (DOM 0.50 ms vs canvas 2.00 ms p50 HUD update at 200 elements, headless Chromium, plus the 68.3 ms thrash hazard figure) and **B-I18N-01** (sw/EN compiled ratio 1.056 raw / 1.325 gzip9 on the spike string set). Easier: sw becomes a pure-data change (PO edit + recompile) with no component work; accessibility and styling ride the DOM; per-locale lazy loading is untouched. Locked out: canvas-rendered UI text (no i18n path), and any HUD loop that reads layout between writes — that pattern is measured at 136× the cost and is review-defect class. Harder: the DOM HUD must be batch-updated per frame (textContent writes only), and the Phase-1 build wrapper must productionize the compile contract — the spike wrapper is throwaway (`tools/spikes/` carve-out) and its round-trip verification must survive into it, including the msgctxt-ordering discrepancy this ADR found in i18next-conv 17.0.0.
+
+Open (explicit): (1) **native-speaker review of every sw string is REQUIRED before Alpha** — all sw entries are `fuzzy`, and the release gate fails while any shipped screen stays fuzzy (`docs/swahili-i18n.md` §9); (2) font import-commit pin + ledger row at first font import; (3) `docs/swahili-i18n.md` §4 needs the i18next-conv key-order correction and the wrapper's role recorded by the orchestrator; (4) glossary questions for the reviewer: "Jonga" for scroll (TUKI glosses it as gaze/stare — "sogeza" is the alternative), "Ping" as loanword, and "Jumuishia" from the suggested term list fits no shell string and was left out rather than forced; (5) the spike's single `default` PO domain (vs the doc's per-domain split) is a Phase-0 proof simplification, resolved by the Phase-1 wrapper.

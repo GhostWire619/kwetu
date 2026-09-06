@@ -1,0 +1,172 @@
+{
+  "spike": "S0.10 — UI stack (DOM vs canvas HUD), i18n pipeline bundle sizes",
+  "measuredAt": "2026-09-05T22:23:57.815Z",
+  "host": {
+    "os": "Windows_NT 10.0.26200",
+    "cpu": "AMD Ryzen 7 7445HS w/ Radeon 740M Graphics     ",
+    "totalMemGB": 15.2,
+    "note": "Host identity per orchestrator context: Windows 11, Ryzen 7 7445HS, RTX 4050 Laptop 6 GB, 15.2 GB RAM."
+  },
+  "browser": {
+    "engine": "Chromium (headless new) via Playwright",
+    "playwrightVersion": "1.63.0",
+    "browserVersion": "153.0.8010.12",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36",
+    "glRenderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+    "viewport": {
+      "w": 800,
+      "h": 600,
+      "dpr": 1
+    },
+    "headlessNote": "Headless: frame pacing is BeginFrame-driven and GL is software (SwiftShader-class) unless the renderer string says otherwise. Absolute ms figures are headless proxies; only the DOM-vs-canvas relative comparison and the thrash detector behaviour carry decision weight."
+  },
+  "probe": {
+    "file": "tools/spikes/s0.10/hud/probe.js",
+    "hudElements": 200,
+    "layout": "5 columns x 40 rows, 12px/14px system-ui, 800x600 viewport (pixel budget chosen so headless rAF paces near 60 Hz; measured 1280x800 paced at ~9.5 fps)",
+    "domMode": "200 <div class=\"stat\"> (400 nodes incl. label+value spans); per-frame textContent update of the 200 value spans",
+    "domThrashMode": "identical DOM plus a forced offsetTop read after every write — 200 forced reflows/frame (hazard demonstration)",
+    "canvasMode": "one 2D-canvas overlay: clearRect + 200 label/value fillText calls per frame",
+    "threeScene": "wireframe icosahedron + 24 orbiting cubes + 600 point stars (WebGL2, pixelRatio 1) — realistic co-load",
+    "framesPerMode": 300,
+    "warmupFramesPerMode": 60,
+    "inputProxy": "pointer-event-to-next-paint latency proxy: last input event.timeStamp minus NEXT requestAnimationFrame timestamp, collected while the runner drives 60 synthetic mouse moves (100 ms apart) during the measured window. PROXY ONLY in headless.",
+    "layoutThrash": "PerformanceObserver 'long-animation-frame' (LoAF reports only frames > 50 ms, so a healthy HUD yields zero entries — the pass signal) + an instrumented forced-reflow count known by construction (0 dom/canvas, 200 dom-thrash).",
+    "threeVersion": "0.185.1"
+  },
+  "results": {
+    "dom": {
+      "mode": "dom",
+      "measuredFrames": 300,
+      "warmupFrames": 0,
+      "wallTimeMs": 6096,
+      "hudUpdateCost": {
+        "n": 300,
+        "meanMs": 0.591,
+        "p50Ms": 0.5,
+        "p95Ms": 1.2,
+        "maxMs": 1.9
+      },
+      "frameInterval": {
+        "n": 299,
+        "meanMs": 16.9448,
+        "p50Ms": 16.7,
+        "p95Ms": 16.7,
+        "maxMs": 33.4,
+        "overBudget": 193,
+        "overBudgetMs": 16.666666666666668
+      },
+      "inputToPaintLatencyProxy": {
+        "n": 38,
+        "meanMs": 7.8421,
+        "p50Ms": 9.3,
+        "p95Ms": 15.5,
+        "maxMs": 28.4
+      },
+      "layoutThrash": {
+        "instrumentedForcedReflowsPerFrame": 0,
+        "loafSupported": true,
+        "loafEntries": 0,
+        "loafEntriesWithStyleLayoutOver0p1ms": 0,
+        "loafBlockingStyleLayoutTotalMs": 0,
+        "loafLongestFrameMs": 0
+      }
+    },
+    "dom-thrash": {
+      "mode": "dom-thrash",
+      "measuredFrames": 300,
+      "warmupFrames": 0,
+      "wallTimeMs": 28539.4,
+      "hudUpdateCost": {
+        "n": 300,
+        "meanMs": 71.3397,
+        "p50Ms": 68.3,
+        "p95Ms": 103.3,
+        "maxMs": 136.2
+      },
+      "frameInterval": {
+        "n": 299,
+        "meanMs": 79.9298,
+        "p50Ms": 83.3,
+        "p95Ms": 116.6,
+        "maxMs": 133.4,
+        "overBudget": 299,
+        "overBudgetMs": 16.666666666666668
+      },
+      "inputToPaintLatencyProxy": {
+        "n": 42,
+        "meanMs": 32.719,
+        "p50Ms": 30.1,
+        "p95Ms": 69,
+        "maxMs": 99.8
+      },
+      "layoutThrash": {
+        "instrumentedForcedReflowsPerFrame": 200,
+        "loafSupported": true,
+        "loafEntries": 356,
+        "loafEntriesWithStyleLayoutOver0p1ms": 0,
+        "loafBlockingStyleLayoutTotalMs": 0,
+        "loafLongestFrameMs": 140.4
+      }
+    },
+    "canvas": {
+      "mode": "canvas",
+      "measuredFrames": 300,
+      "warmupFrames": 0,
+      "wallTimeMs": 5987.9,
+      "hudUpdateCost": {
+        "n": 300,
+        "meanMs": 2.064,
+        "p50Ms": 2,
+        "p95Ms": 3.2,
+        "maxMs": 4.6
+      },
+      "frameInterval": {
+        "n": 299,
+        "meanMs": 16.6662,
+        "p50Ms": 16.7,
+        "p95Ms": 16.8,
+        "maxMs": 16.8,
+        "overBudget": 184,
+        "overBudgetMs": 16.666666666666668
+      },
+      "inputToPaintLatencyProxy": {
+        "n": 38,
+        "meanMs": 7.0211,
+        "p50Ms": 9,
+        "p95Ms": 15,
+        "maxMs": 15.5
+      },
+      "layoutThrash": {
+        "instrumentedForcedReflowsPerFrame": 0,
+        "loafSupported": true,
+        "loafEntries": 3,
+        "loafEntriesWithStyleLayoutOver0p1ms": 0,
+        "loafBlockingStyleLayoutTotalMs": 0,
+        "loafLongestFrameMs": 73.6
+      }
+    }
+  },
+  "i18nBundles": {
+    "method": "node:fs byte length + node:zlib gzipSync level 9 over the compiled translation.json artifacts",
+    "en": {
+      "path": "locales/en/translation.json",
+      "rawBytes": 1825,
+      "gzip9Bytes": 551
+    },
+    "sw": {
+      "path": "locales/sw/translation.json",
+      "rawBytes": 1927,
+      "gzip9Bytes": 730
+    },
+    "swVsEnRawRatio": 1.0559,
+    "swVsEnGzip9Ratio": 1.3249,
+    "note": "Measured on the S0.10 spike string set (43 msgids -> 45 compiled keys per locale); a different string set shifts the ratio. Compiled by tools/spikes/s0.10/i18n/compile.mjs (i18next-conv 17.0.0)."
+  },
+  "pageErrors": [],
+  "scopeNotes": [
+    "No integrated-GPU or real-display-pipeline figure was measured — headless software GL only.",
+    "No player-capacity or element-count ceiling is extrapolated beyond the 200-element probe point.",
+    "The DOM-vs-canvas decision and its budget row live in docs/adr/ADR-010-s10-ui-i18n.md and ROADMAP §Budgets (B-UI-01)."
+  ]
+}

@@ -293,11 +293,11 @@ so the tests start from real numbers, not round numbers.
 
 | ID | What it proves | Seed / threshold |
 |---|---|---|
-| G-01 | Frame self-consistency: the library's own horizon frame at a site vs our ECEF→EQD→EQJ chain (zenith round-trip) | measured 4.6e−14 deg at the §12 site [MEASURED 2026-09-05]; threshold [PLACEHOLDER — gate: S0.1] |
-| G-02 | Full-chain f64 round-trip (geodetic → helio → camera inputs and back) | measured residual ≤ 4.4e−6 m at the §12 site [MEASURED 2026-09-05]; threshold [PLACEHOLDER — gate: S0.1] |
-| G-03 | Ephemeris vs Python oracle (Skyfield/de440s, Horizons fixtures), heliocentric + geocentric, multiple dates | tolerance [PLACEHOLDER — gate: S0.1/S0.11] |
+| G-01 | Frame self-consistency: the library's own horizon frame at a site vs our ECEF→EQD→EQJ chain (zenith round-trip) | measured 4.6e−14 deg at the §12 site [MEASURED 2026-09-05]; threshold 1e−12 deg (ADR-002 Decision; CI-enforced in tests/engine) |
+| G-02 | Full-chain f64 round-trip (geodetic → helio → camera inputs and back) | measured residual ≤ 4.4e−6 m at the §12 site [MEASURED 2026-09-05]; threshold 1e−5 m (ADR-002 Decision; CI-enforced in tests/engine) |
+| G-03 | Ephemeris vs Python oracle (Skyfield/de440s, Horizons fixtures), heliocentric + geocentric, multiple dates | geocentric ≤ 0.5 arcmin; Moon linear-interpolation gap ≤ 120 km; EMB↔Earth offset ≤ 1 km; topocentric ≤ 0.25 arcmin [MEASURED 2026-09-06, ADR-011 Decision — pins from tests/golden/ephemeris/ residuals] |
 | G-04 | No-f32-contamination: static check that no `Float32Array` crosses a frame-conversion boundary | zero violations, enforced every build |
-| G-05 | Determinism: bitwise replay of a recorded input path (S0.11) | threshold [PLACEHOLDER — gate: S0.11] |
+| G-05 | Determinism: bitwise replay of a recorded input path (S0.11) | same host: bitwise PASS (canonical sha256 `f127593e…9f7e`); cross-platform bitwise PASS on Windows + Linux x86-64 [MEASURED 2026-09-06, B-EPH-02] |
 
 Fixtures pin the astronomy-engine version, the AU constant, and the ΔT behaviour (§4) they
 were generated with. A fixture regenerated under a different pin is a different fixture.
@@ -315,6 +315,17 @@ displayed rounded].
 |---|---|---|---|
 | 1 | Geodetic → `Frame.PlanetFixed(Earth)` (ECEF) via §5 formulas (geodesy module) | f64, closed form | X = 4 907 565.698 m, Y = 4 003 939.392 m, Z = −749 078.231 m (r ≈ 6 377 840.5 m) |
 | 2 | `Frame.PlanetFixed` → `Frame.Pci(Earth)` via GAST = 344.118° then EQD→EQJ (library rotation) — `toPlanetFixed` inverse | f64 rotation | geocentric EQJ ≈ (5 828 917.818, 2 473 115.830, −764 372.354) m |
+
+> **Step-2 GAST convention note [MEASURED 2026-09-06, ADR-008 open item].** The 344.118°
+> seed was computed with astronomy-engine's *date-feed* convention (sidereal time derived
+> from the UT date). At the same instant evaluated on the TT clock the correct GAST is
+> **344.09182320318416°** — Δ 0.02626 deg ≈ 6.3 s of Earth rotation at the sidereal rate
+> (0.0041781 deg/s). The worked example's chain values are internally consistent under the
+> convention it used, and the round-trip guarantees G-01/G-02 are convention-invariant
+> (a constant rotation error cancels in a round trip). But **absolute-orientation
+> consumers** — sky rendering, ground-track drawing, anything comparing two instants'
+> orientations — must pass TT-based time through the engine (ADR-008 Decision 4), or the
+> sky is rotated 0.026° from truth. Production frame code uses the TT-correct seed.
 | 3 | AU boundary: Earth `HelioVector` = (0.959534245683709, −0.2844143594239741, −0.12329471927952336) AU × pinned constant (ephemeris adapter) | f64, one multiply | (143 544 280 009.368, −42 547 782 563.768, −18 444 627 471.660) m |
 | 4 | `Frame.Pci` + Earth position → `Frame.Helio` (sim core, addition) | f64; ULP ≈ 30 µm here — lossless at our bar | Dar heliocentric ≈ (143 550 108 927.186, −42 545 309 447.938, −18 445 391 844.014) m |
 | — | `Frame.Universe` (SSB) | n/a | **not computed** — deferred (Interstellar phase); the Sun–SSB offset is of order one solar radius (~7e8 m) [EXTERNAL] |

@@ -8,7 +8,16 @@
 // compare (ATTRIBUTIONS.md preamble standard).
 
 import { describe, expect, it } from 'vitest';
-import { checkAll, evalAttributionCell, normalizeWs, parseAttributionStrings } from './check.mjs';
+import {
+  checkAll,
+  evalAttributionCell,
+  normalizeWs,
+  parseAttributionStrings,
+  parsePackageJson,
+  parsePinVersion,
+  resolvedLockVersion,
+  rowNameMatches,
+} from './check.mjs';
 
 // ------------------------------------------------------------------ fixtures
 
@@ -133,7 +142,42 @@ const MD_FILES = (extra = []) => [
   ...extra,
 ];
 
-const BASE = { tpaMd: TPA, attributionsMd: ATTRIB, dataSourcesMd: DATA_SOURCES, readmeMd: README, masterPromptMd: MASTER_PROMPT };
+// R7/R8 inputs: a minimal package.json + lockfile whose one declared package
+// (widget-lib) is covered by the fixture code table at the pinned version.
+const makePkg = (deps = {}, devDeps = {}) =>
+  JSON.stringify(
+    { name: 'kwetu-fixture', version: '0.0.0', private: true, dependencies: deps, devDependencies: devDeps },
+    null,
+    2,
+  );
+
+const makeLock = (entries) =>
+  JSON.stringify(
+    {
+      name: 'kwetu-fixture',
+      version: '0.0.0',
+      lockfileVersion: 3,
+      packages: {
+        '': { name: 'kwetu-fixture', version: '0.0.0' },
+        ...Object.fromEntries(entries.map(([n, v]) => [`node_modules/${n}`, { version: v }])),
+      },
+    },
+    null,
+    2,
+  );
+
+const PACKAGE_JSON = makePkg({ 'widget-lib': '1.0.0' });
+const LOCKFILE = makeLock([['widget-lib', '1.0.0']]);
+
+const BASE = {
+  tpaMd: TPA,
+  attributionsMd: ATTRIB,
+  dataSourcesMd: DATA_SOURCES,
+  readmeMd: README,
+  masterPromptMd: MASTER_PROMPT,
+  packageJsonText: PACKAGE_JSON,
+  lockfileText: LOCKFILE,
+};
 
 function run(overrides = {}, extraFiles = []) {
   return checkAll({ ...BASE, ...overrides, mdFiles: MD_FILES(extraFiles) });
@@ -372,5 +416,166 @@ describe('evalAttributionCell (unit)', () => {
     expect(evalAttributionCell('`some paraphrased credit`', canon).verdict).toBe('fail');
     expect(evalAttributionCell('y', canon).verdict).toBe('fail');
     expect(evalAttributionCell('maybe later', canon).verdict).toBe('fail');
+  });
+});
+
+// ------------------------------------------------- R7 — dependency coverage
+
+describe('R7 — package.json dependency coverage', () => {
+  it('covers every declared package from the code table and states the transitive-deps boundary', () => {
+    const res = run();
+    expect(res.failed).toBe(false);
+    expect(texts(res, 'R7', 'fail')).toEqual([]);
+    const joined = texts(res, 'R7', 'info').join('\n');
+    expect(joined).toMatch(/1 declared package\(s\).*vs 1 code-NN row\(s\)/);
+    expect(joined).toMatch(/widget-lib \(dependencies\) → code-01/);
+    expect(joined).toMatch(/transitive dependencies are NOT checked/);
+  });
+
+  it('fails a declared package with no code-NN row', () => {
+    const res = run({ packageJsonText: makePkg({ 'widget-lib': '1.0.0', 'left-pad': '^1.3.0' }) });
+    expect(res.failed).toBe(true);
+    expect(texts(res, 'R7', 'fail').join('\n')).toMatch(/left-pad \(package\.json dependencies, spec "\^1\.3\.0"\): no code-NN row/);
+  });
+
+  it('never lets name-substring collisions stand in for a row', () => {
+    const codeTable = `## Code dependencies\n\n| id | kind | name | license | how used | pin | attribution string required | verified |\n|---|---|---|---|---|---|---|---|\n| code-01 | code | vitest | MIT | tests | 5.0.0 | n — license text retained | 2026-09-05 |\n| code-02 | code | i18next-conv | MIT | po conversion | 17.0.0 | n — license text retained | 2026-09-05 |\n`;
+    const tpa = `# THIRD_PARTY_ASSETS.md\n\n${codeTable}\n${DATASET_TABLE}\n${GEN_TABLE}\n`;
+    const res = run({ tpaMd: tpa, packageJsonText: makePkg({ vite: '^8.2.2', i18next: '26.4.2' }) });
+    expect(res.failed).toBe(true);
+    const fails = texts(res, 'R7', 'fail').join('\n');
+    expect(fails).toMatch(/vite \(package\.json dependencies, spec "\^8\.2\.2"\): no code-NN row/);
+    expect(fails).toMatch(/i18next \(package\.json dependencies, spec "26\.4\.2"\): no code-NN row/);
+  });
+
+  it('never satisfies coverage from an asset row sharing the code table', () => {
+    // asset-02 "Kenney" sits in the same markdown table but is not a code-NN row.
+    const res = run({ packageJsonText: makePkg({ kenney: '1.0.0' }) });
+    expect(res.failed).toBe(true);
+    const fails = texts(res, 'R7', 'fail').join('\n');
+    expect(fails).toMatch(/kenney.*no code-NN row/s);
+    expect(fails).not.toMatch(/asset-02/);
+  });
+
+  it('fails when package.json is not readable or unparseable', () => {
+    const unreadable = run({ packageJsonText: null });
+    expect(unreadable.failed).toBe(true);
+    expect(texts(unreadable, 'R7', 'fail').join('\n')).toMatch(/package\.json could not be parsed: not readable/);
+    const broken = run({ packageJsonText: '{oops' });
+    expect(broken.failed).toBe(true);
+    expect(texts(broken, 'R7', 'fail').join('\n')).toMatch(/package\.json could not be parsed:/);
+  });
+
+  it('fails when the THIRD_PARTY_ASSETS.md tables are gone entirely', () => {
+    const res = run({ tpaMd: '# THIRD_PARTY_ASSETS.md\n\nnothing here\n' });
+    expect(res.failed).toBe(true);
+    expect(texts(res, 'R7', 'fail').join('\n')).toMatch(/code table unavailable/);
+  });
+});
+
+// ------------------------------------------------- R8 — version drift
+
+describe('R8 — version drift', () => {
+  it('passes when every ledger pin equals the lockfile-resolved version', () => {
+    const res = run();
+    expect(res.failed).toBe(false);
+    expect(texts(res, 'R8', 'fail')).toEqual([]);
+    const joined = texts(res, 'R8', 'info').join('\n');
+    expect(joined).toMatch(/code-01 \(widget-lib\): pin 1\.0\.0 = package-lock\.json 1\.0\.0/);
+    expect(joined).toMatch(/1 row pin\(s\) compared against package-lock\.json, 0 drifted/);
+  });
+
+  it('fails when the ledger pin differs from the lockfile-resolved version', () => {
+    const res = run({ lockfileText: makeLock([['widget-lib', '1.2.0']]) });
+    expect(res.failed).toBe(true);
+    expect(texts(res, 'R8', 'fail').join('\n')).toMatch(
+      /code-01 \(widget-lib\): ledger pin 1\.0\.0 ≠ package-lock\.json resolved 1\.2\.0/,
+    );
+  });
+
+  it('defers with a warning when a matching row is still unpinned', () => {
+    const tpa = TPA.replace('| 1.0.0 |', '| [PLACEHOLDER — pin at first code commit] |');
+    const res = run({ tpaMd: tpa });
+    expect(res.failed).toBe(false);
+    expect(texts(res, 'R8', 'warn').join('\n')).toMatch(/code-01 \(widget-lib\): pin cell carries no comparable version/);
+  });
+
+  it('checks every matching row, not just the first', () => {
+    const tpa = TPA.replace(
+      '| code-01 | code | widget-lib | MIT | demo | 1.0.0 | n — license text retained | 2026-09-05 — registry packument |',
+      '| code-01 | code | widget-lib | MIT | demo | 1.0.0 | n — license text retained | 2026-09-05 — registry packument |\n| code-02 | code | widget-lib | MIT | demo | 2.0.0 | n — license text retained | 2026-09-05 — registry packument |',
+    );
+    const res = run({ tpaMd: tpa });
+    expect(res.failed).toBe(true);
+    const fails = texts(res, 'R8', 'fail').join('\n');
+    expect(fails).toMatch(/code-02 \(widget-lib\): ledger pin 2\.0\.0 ≠ package-lock\.json resolved 1\.0\.0/);
+    expect(fails).not.toMatch(/code-01 \(widget-lib\): ledger pin/);
+    expect(texts(res, 'R8', 'info').join('\n')).toMatch(/code-01 \(widget-lib\): pin 1\.0\.0 = package-lock\.json 1\.0\.0/);
+  });
+
+  it('fails when the lockfile is not readable or unparseable', () => {
+    const unreadable = run({ lockfileText: null });
+    expect(unreadable.failed).toBe(true);
+    expect(texts(unreadable, 'R8', 'fail').join('\n')).toMatch(/package-lock\.json not readable/);
+    const broken = run({ lockfileText: '{' });
+    expect(broken.failed).toBe(true);
+    expect(texts(broken, 'R8', 'fail').join('\n')).toMatch(/package-lock\.json could not be parsed/);
+  });
+
+  it('fails when the lockfile has no resolved version for a declared package', () => {
+    const tpa = TPA.replace(
+      '| code-01 | code | widget-lib |',
+      '| code-05 | code | ghost-lib | MIT | demo | 1.0.0 | n — license text retained | 2026-09-05 |\n| code-01 | code | widget-lib |',
+    );
+    const res = run({ tpaMd: tpa, packageJsonText: makePkg({ 'widget-lib': '1.0.0', 'ghost-lib': '1.0.0' }) });
+    expect(res.failed).toBe(true);
+    expect(texts(res, 'R8', 'fail').join('\n')).toMatch(/ghost-lib: no resolved version in package-lock\.json/);
+  });
+
+  it('falls back to the lockfileVersion-1 dependencies shape', () => {
+    const lock = JSON.stringify({ name: 'kwetu-fixture', lockfileVersion: 1, dependencies: { 'widget-lib': { version: '1.0.0' } } });
+    const res = run({ lockfileText: lock });
+    expect(res.failed).toBe(false);
+    expect(texts(res, 'R8', 'info').join('\n')).toMatch(/pin 1\.0\.0 = package-lock\.json 1\.0\.0/);
+  });
+});
+
+// ------------------------------------------------- pin/name matching units
+
+describe('pin/name matching (unit)', () => {
+  it('extracts the first comparable version from real pin cells', () => {
+    expect(parsePinVersion('**2.8.0** (`latest`, published 2024-06-21) — no npm release in 2+ years')).toBe('2.8.0');
+    expect(parsePinVersion('**24.13.3** (package.json carries `^24.13.3`; matches the Node 24.13.0 dev host)')).toBe('24.13.3');
+    expect(parsePinVersion('**0.185.1** (pinned exact in package.json)')).toBe('0.185.1');
+    expect(parsePinVersion('[PLACEHOLDER — pin at first code commit]')).toBe(null);
+    expect(parsePinVersion('[PLACEHOLDER — pin image digest at first deploy]')).toBe(null);
+    expect(parsePinVersion('**4.x** — see note 3')).toBe(null);
+    expect(parsePinVersion('— (no pack may be pinned)')).toBe(null);
+  });
+
+  it('matches annotated and exact name cells, never substring collisions', () => {
+    expect(rowNameMatches('@heroiclabs/nakama-js (npm scope; plain `nakama-js` 404s)', '@heroiclabs/nakama-js')).toBe(true);
+    expect(rowNameMatches('three.js', 'three')).toBe(true);
+    expect(rowNameMatches('meshoptimizer / gltfpack', 'meshoptimizer')).toBe(true);
+    expect(rowNameMatches('@types/three', '@types/three')).toBe(true);
+    expect(rowNameMatches('livekit server (self-hosted image)', 'livekit-client')).toBe(false);
+    expect(rowNameMatches('@types/three', 'three')).toBe(false);
+    expect(rowNameMatches('vitest', 'vite')).toBe(false);
+    expect(rowNameMatches('i18next-conv', 'i18next')).toBe(false);
+    expect(rowNameMatches('satellite.js', 'satellite')).toBe(true);
+    expect(rowNameMatches('', 'x')).toBe(false);
+  });
+
+  it('parses package.json sections and resolves lockfile versions (v3 + v1)', () => {
+    const pkg = parsePackageJson('{"dependencies":{"a":"1.0.0"},"devDependencies":{"b":"^2.0.0"}}');
+    expect([...pkg.names.entries()]).toEqual([
+      ['a', { section: 'dependencies', spec: '1.0.0' }],
+      ['b', { section: 'devDependencies', spec: '^2.0.0' }],
+    ]);
+    expect(parsePackageJson(null).error).toBe('not readable');
+    expect(parsePackageJson('{').error).toBeTruthy();
+    expect(resolvedLockVersion({ packages: { 'node_modules/a': { version: '1.0.0' } } }, 'a')).toBe('1.0.0');
+    expect(resolvedLockVersion({ dependencies: { a: { version: '1.0.0' } } }, 'a')).toBe('1.0.0');
+    expect(resolvedLockVersion({ packages: {} }, 'a')).toBe(null);
   });
 });

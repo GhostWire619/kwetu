@@ -1,0 +1,196 @@
+# Kwetu shell UI strings — English source locale.
+# Source of truth: gettext PO (docs/swahili-i18n.md §2). msgid is the English
+# source string; msgctxt carries the screen path (<screen>/, snake_case,
+# trailing slash). Placeholders are i18next tokens {{token}}, never printf.
+#
+# Compiled with tools/spikes/s0.10/i18n/compile.mjs (i18next-conv CLI + contract
+# normalizer) to locales/en/translation.json.
+msgid ""
+msgstr ""
+"Project-Id-Version: Kwetu ui\n"
+"Language: en\n"
+"Language-Team: Kwetu\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgctxt "main_menu/"
+msgid "Play"
+msgstr "Play"
+
+msgctxt "main_menu/"
+msgid "Continue"
+msgstr "Continue"
+
+msgctxt "main_menu/"
+msgid "New Game"
+msgstr "New Game"
+
+msgctxt "main_menu/"
+msgid "Join World"
+msgstr "Join World"
+
+msgctxt "main_menu/"
+msgid "Settings"
+msgstr "Settings"
+
+msgctxt "main_menu/"
+msgid "Credits"
+msgstr "Credits"
+
+msgctxt "main_menu/"
+msgid "Quit"
+msgstr "Quit"
+
+#. EN plural: one / other. sw rendering lives in sw.default.po.
+msgctxt "main_menu/"
+msgid "{{count}} player online"
+msgid_plural "{{count}} players online"
+msgstr[0] "{{count}} player online"
+msgstr[1] "{{count}} players online"
+
+msgctxt "main_menu/"
+msgid "Welcome to Kwetu"
+msgstr "Welcome to Kwetu"
+
+msgctxt "main_menu/"
+msgid "Loading world…"
+msgstr "Loading world…"
+
+msgctxt "settings/"
+msgid "Back"
+msgstr "Back"
+
+msgctxt "settings/"
+msgid "Apply"
+msgstr "Apply"
+
+msgctxt "settings/"
+msgid "Cancel"
+msgstr "Cancel"
+
+msgctxt "settings/"
+msgid "Save"
+msgstr "Save"
+
+msgctxt "settings/"
+msgid "Language"
+msgstr "Language"
+
+msgctxt "settings/"
+msgid "Display"
+msgstr "Display"
+
+msgctxt "settings/"
+msgid "Fullscreen"
+msgstr "Fullscreen"
+
+msgctxt "settings/"
+msgid "Graphics Quality"
+msgstr "Graphics Quality"
+
+msgctxt "settings/"
+msgid "Controls"
+msgstr "Controls"
+
+msgctxt "settings/"
+msgid "Mouse Sensitivity"
+msgstr "Mouse Sensitivity"
+
+msgctxt "settings/"
+msgid "Reset to Defaults"
+msgstr "Reset to Defaults"
+
+msgctxt "settings/audio/"
+msgid "Audio"
+msgstr "Audio"
+
+msgctxt "settings/audio/"
+msgid "Master Volume"
+msgstr "Master Volume"
+
+msgctxt "settings/audio/"
+msgid "Music Volume"
+msgstr "Music Volume"
+
+msgctxt "settings/audio/"
+msgid "Mute All"
+msgstr "Mute All"
+
+msgctxt "settings/audio/"
+msgid "Voice Chat"
+msgstr "Voice Chat"
+
+msgctxt "settings/audio/"
+msgid "Microphone"
+msgstr "Microphone"
+
+msgctxt "settings/audio/"
+msgid "Push to Talk"
+msgstr "Push to Talk"
+
+msgctxt "settings/audio/"
+msgid "On"
+msgstr "On"
+
+msgctxt "settings/audio/"
+msgid "Off"
+msgstr "Off"
+
+msgctxt "hud/"
+msgid "Speed"
+msgstr "Speed"
+
+msgctxt "hud/"
+msgid "Altitude"
+msgstr "Altitude"
+
+msgctxt "hud/"
+msgid "Heading"
+msgstr "Heading"
+
+msgctxt "hud/"
+msgid "Position"
+msgstr "Position"
+
+msgctxt "hud/"
+msgid "Fuel"
+msgstr "Fuel"
+
+msgctxt "hud/"
+msgid "Time"
+msgstr "Time"
+
+#. "Ping" stays a loanword in sw UI usage — glossary question for native review.
+msgctxt "hud/"
+msgid "Ping"
+msgstr "Ping"
+
+msgctxt "hud/"
+msgid "Frame Rate"
+msgstr "Frame Rate"
+
+msgctxt "hud/"
+msgid "Paused"
+msgstr "Paused"
+
+msgctxt "hud/"
+msgid "Stop"
+msgstr "Stop"
+
+msgctxt "hud/"
+msgid "Scroll to zoom"
+msgstr "Scroll to zoom"
+
+msgctxt "hud/"
+msgid "Chat"
+msgstr "Chat"
+
+#. sw keeps the numeral+noun singular form in both categories — see
+#. sw.default.po; the two PO slots stay distinct only where sw marks them.
+msgctxt "hud/"
+msgid "{{count}} unread message"
+msgid_plural "{{count}} unread messages"
+msgstr[0] "{{count}} unread message"
+msgstr[1] "{{count}} unread messages"

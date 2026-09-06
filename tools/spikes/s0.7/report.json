@@ -1,0 +1,196 @@
+{
+  "spike": "S0.7 — time-warp / universe-clock semantics (TT adapters, leap table, warp, restart)",
+  "date": "2026-09-06",
+  "host": "Windows 11 dev box (Ryzen 7 7445HS / RTX 4050 Laptop), Node v24.13.0",
+  "toolVersions": {
+    "node": "v24.13.0",
+    "astronomyEngine": "2.1.19",
+    "typescript": "7.0.2 (dev tooling, caret-pinned)",
+    "vitest": "5.0.0 (dev tooling, caret-pinned)",
+    "timeAdapterRevision": "kwetu-tt-adapter/1",
+    "leapTableRevision": "ierc-2026-09-06 (IANA leap-seconds.list updated through IERS Bulletin C; file expires 2027-06-28)"
+  },
+  "runner": "npx vitest run tools/spikes/s0.7 — 1 test file, 29 tests, all passing at write time; strict tsc self-check (project flags + resolveJsonModule + allowImportingTsExtensions) clean",
+  "method": {
+    "conversions": "ttClock.ts: tt = (posixMs + (TAI-UTC)*1000 + 32184 - civilJ2000Ms)/1000, civil arithmetic in integer ms (Date.UTC/Date.parse only — ECMAScript Dates never carry sim time); inverse via exact interval algorithm (entry k labels [E_k,E_{k+1}) cover TT ms [E_k + o_k*1000 + C, E_{k+1} + o_k*1000 + C), C = 32184 - civilJ2000Ms); TT ms inside an inserted second (no POSIX label) clamp to the last representable label. J2000_TT_POSIX_MS derived from the table: 946728000000 - 32000 - 32184 = 946727935816 (= 2000-01-01T11:58:55.816Z).",
+    "warpSemantics": "UniverseClock anchors worldTime to an injectable MONOTONIC source (rate fixed 1); warp is an isolated WarpClock view with its own anchor/rate that never touches the parent anchor. Zero-divergence test: identical fake-mono scenario run twice (with/without a concurrent 10x warp), shared readings compared BITWISE at 6 mono stops; three regime-owner sample slots (CONTACT_LOCAL / FLIGHT_DYNAMIC / ORBIT_COAST naming) read the same shared instants. WarpClock.serialize() throws (isolated training cannot merge state).",
+    "restart": "serialize() emits exactly {clockRevision, worldTimeTtSeconds, savedAtUtc, leapTableRevision, timeAdapterRevision} (COORDINATE_SYSTEM.md §4). resume() computes downtime as INTEGER wall-ms (label diff + leap-count diff) -> /1000 once, adds to the persisted tt (offline coast preserves duration); negative civil jumps clamped to 0 with clockRevision + 1; wall-clock steps mid-process cannot move sim time (mono-driven).",
+    "astronomyEngineCrossCheck": "astronomy-engine 2.1.19 conventions read from source: AstroTime(Date) sets ut = (ms - J2000.ms)/86400000 (J2000 = 2000-01-01T12:00:00Z, its UT timeline) and tt = ut + DeltaT_EspenakMeeus(ut)/86400; era()/SiderealTime Earth rotation consumes time.ut, nutation/polynomial time.tt. Cross-check: AstroTime.FromTerrestrialTime(tt/86400) — the library's own TT-boundary solver (1e-12 day loop) — residual vs tt/86400, and MakeTime(Date(libEpoch + tt*1000)).ut vs tt/86400; samples span 1995..2026 incl. ms-level."
+  },
+  "probes": {
+    "leapTable": {
+      "entries": 28,
+      "first": "1972-01-01",
+      "last": "2017-01-01",
+      "current": 37,
+      "baseEffectiveUtc": "1972-01-01",
+      "baseOffsetSeconds": 10,
+      "coverageNote": "B-TIME-02: base 10 s at 1972-01-01, 27 insertions, current 37 s since 2017-01-01; no entry dated after 2017-01-01 (offset 37 s in force throughout 2026). Before-1972 instants are refused, not extrapolated.",
+      "provenance": {
+        "retrieved": "2026-09-06",
+        "sourceUrl": "https://data.iana.org/time-zones/data/leap-seconds.list",
+        "sourceNote": "IANA tzdata leap-seconds.list, '#$ last update' NTP timestamp 3992312697, '#@ file expires' NTP timestamp 4023129600 = 2027-06-28; file states it is updated through IERS Bulletin C (IERS origin: https://hpiers.obspm.fr/iers/bul/bulc/bulletinc.dat).",
+        "authoritativeOrigin": "https://www.iers.org/IERS/EN/Publications/Bulletins/bulletinc.html",
+        "verifiedPoints": "Entry count 28 (base 10 s at 1972-01-01 + 27 steps); 2017-01-01 -> 37 s; no entry dated after 2017-01-01 as of retrieval, so offset 37 s is in force throughout 2026. Re-verified 2026-09-06 against the live IANA file: all 28 DTAI rows matched date-by-date and value-by-value, last update 3992312697, expiry 4023129600 (2027-06-28), no negative step.",
+        "negativeLeapContingency": "No negative leap second has ever been inserted (all rows type=positive). A negative-leap policy is an open item (ADR-008): the adapter would need a 'negative' row whose POSIX label SET repeats 23:59:59 once, which the POSIX timeline cannot express - the schema reserves the type field for it."
+      }
+    },
+    "knownPoints": {
+      "j2000TtIsZeroUtcIso": "2000-01-01T11:58:55.816Z",
+      "j2000TtPosixMs": 946727935816,
+      "j2000BothDirectionsExact": true,
+      "taiMinusTtSeconds": 32.184,
+      "offset2017Is37": true,
+      "offsetBefore2017Is36": true,
+      "leapWindow2016H1_2017H1": {
+        "nominalLabelStepSeconds": 21600,
+        "anomalies": 1,
+        "anomalySeconds": 21601,
+        "note": "strictly increasing tt across a 6 h sweep 2016-06..2017-06; exactly one +1 s TT step at the 2017 insertion"
+      },
+      "twoDaySpanAcrossStep": {
+        "labelSeconds": 172800,
+        "ttSeconds": 172801
+      },
+      "skippedSecondClampIso": "2016-12-31T23:59:59.999Z"
+    },
+    "astronomyEngineCrossCheck": {
+      "libJ2000OriginCheck": {
+        "utAtLibEpoch": 0,
+        "exactZero": true
+      },
+      "samples": [
+        {
+          "ttSeconds": 0,
+          "ttDays": 0,
+          "fromTtResidualDays": 0,
+          "utConventionResidualDays": 0,
+          "naiveDateDeltaTSeconds": 63.847089569816944
+        },
+        {
+          "ttSeconds": -150000000,
+          "ttDays": -1736.111111111111,
+          "fromTtResidualDays": 0,
+          "utConventionResidualDays": 0,
+          "naiveDateDeltaTSeconds": 60.96461507258937
+        },
+        {
+          "ttSeconds": 100000000,
+          "ttDays": 1157.4074074074074,
+          "fromTtResidualDays": 0,
+          "utConventionResidualDays": 0,
+          "naiveDateDeltaTSeconds": 64.43822468281724
+        },
+        {
+          "ttSeconds": 250000000,
+          "ttDays": 2893.5185185185187,
+          "fromTtResidualDays": 0,
+          "utConventionResidualDays": 0,
+          "naiveDateDeltaTSeconds": 65.80732927832287
+        },
+        {
+          "ttSeconds": 500000000,
+          "ttDays": 5787.037037037037,
+          "fromTtResidualDays": 0,
+          "utConventionResidualDays": 0,
+          "naiveDateDeltaTSeconds": 69.40854322747327
+        },
+        {
+          "ttSeconds": 840000000,
+          "ttDays": 9722.222222222223,
+          "fromTtResidualDays": 0,
+          "utConventionResidualDays": 0,
+          "naiveDateDeltaTSeconds": 75.43203166569583
+        },
+        {
+          "ttSeconds": 840000000.123,
+          "ttDays": 9722.222223645833,
+          "fromTtResidualDays": 0,
+          "utConventionResidualDays": 0,
+          "naiveDateDeltaTSeconds": 75.43203166569583
+        }
+      ],
+      "maxFromTtResidualDays": 0,
+      "maxFromTtResidualSeconds": 0,
+      "maxUtConventionResidualDays": 0,
+      "naiveDateDeltaTSecondsAtSamples": [
+        63.847089569816944,
+        60.96461507258937,
+        64.43822468281724,
+        65.80732927832287,
+        69.40854322747327,
+        75.43203166569583,
+        75.43203166569583
+      ],
+      "maxNaiveDateDeltaTSeconds": 75.43203166569583,
+      "gastConflationAtS12": {
+        "instantIso": "2026-09-05T00:00:00Z",
+        "correctGastDeg": 344.09182320318416,
+        "naiveGastDeg": 344.4071346896524,
+        "errorDeg": 0.3153114864682607,
+        "docSeedGastDeg": 344.1180787594703,
+        "feedConventionGastDiffDeg": 0.026255556286116644
+      },
+      "note": "B-TIME-01: max residual of the TT scale vs astronomy-engine 2.1.19 is 0 days (bitwise) at all 7 samples via FromTerrestrialTime, and the library's linear UT-days convention agrees bitwise with tt/86400 for ms-exact samples. The library's own DeltaT model (Espenak-Meeus) is 63.85 s at J2000 rising to 75.43 s at 2026 — feeding our TT as a naive Date would misplace it by that amount (GAST 0.3153 deg = 18.9 arcmin at the §12 instant). The committed §12 seed / ADR-002 chain used the date-feed convention; feed-convention difference measured at 0.02626 deg (≈ 5.5 s of Earth rotation) — golden fixtures must pin the feed convention (S0.11 gate)."
+    },
+    "f64Precision": {
+      "ttSeconds": 841968069.184,
+      "ulpSeconds": 1.1920928955078125e-7,
+      "ulpDays": 1.3797371475784866e-12,
+      "note": "f64 ULP of the tt scale at the 2026 epoch: 1.192e-7 s = 1.38e-12 day — three orders inside the 1e-9 day cross-check bar."
+    },
+    "warpZeroDivergence": {
+      "rate": 10,
+      "monoStopsMs": [
+        0,
+        1000,
+        2500,
+        5000,
+        7500,
+        10000
+      ],
+      "maxSharedDivergenceSeconds": 0,
+      "bitwiseIdentical": true,
+      "localAdvanceSeconds": 100,
+      "localVsSharedDivergenceSeconds": 90,
+      "serializeThrows": true
+    },
+    "restart": {
+      "anchorWallIso": "2026-09-06T12:00:00.000Z",
+      "savedTtSeconds": 841968074.184,
+      "downtimeSeconds": 60,
+      "expectedTtSeconds": 841968134.184,
+      "resumedTtSeconds": 841968134.184,
+      "resumeDriftSeconds": 0,
+      "exactContinuation": true,
+      "scenario": "5 s process life -> serialize -> 60 s civil downtime (fresh process, mono at 0) -> resume",
+      "negativeJump": {
+        "refused": true,
+        "downtimeSeconds": 0,
+        "revisionIncremented": true,
+        "bitwiseNoBackwardsMotion": true
+      },
+      "wallCorrectionMidProcess": {
+        "simTimeUnchanged": true,
+        "bitwise": true
+      },
+      "leapTableMismatchFlagged": true
+    }
+  },
+  "budgetInputs": {
+    "bTime01": {
+      "quantity": "Max conversion residual vs astronomy-engine cross-check (B-TIME-01)",
+      "value_days": 0,
+      "value_seconds": 0,
+      "method": "AstroTime.FromTerrestrialTime(tt/86400).tt vs tt/86400 over 7 samples 1995..2026 (tools/spikes/s0.7/crossCheck.ts)"
+    },
+    "bTime02": {
+      "quantity": "Leap-table coverage: first..last covered leap, current offset (B-TIME-02)",
+      "firstCoveredLeap": "1972-01-01",
+      "lastCoveredLeap": "2017-01-01",
+      "entries": 28,
+      "currentOffsetSeconds": 37,
+      "method": "validateLeapTable() over tools/spikes/s0.7/leap-seconds.json (IANA leap-seconds.list, retrieved 2026-09-06)"
+    }
+  }
+}

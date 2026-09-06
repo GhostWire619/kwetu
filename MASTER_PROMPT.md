@@ -829,6 +829,7 @@ kwetu/
 ├── client/            # TypeScript + three.js + Rapier (WASM)
 ├── server/            # Nakama config + Go runtime modules
 ├── shared/            # schemas, protocol definitions shared client↔server
+├── locales/           # i18n source of truth: per-domain .po files + compiled i18next JSON (docs/swahili-i18n.md §4; ADR-010 Decision 4)
 ├── data/              # the ODbL layer — derivative databases ONLY
 │   └── README.md      # states the layer rule (see below)
 ├── tools/             # pipeline scripts: osmium/planetiler/OSM2World/delatin/Blender

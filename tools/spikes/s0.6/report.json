@@ -1,0 +1,230 @@
+{
+  "spike": "S0.6 — server-validation prototype",
+  "adr": "docs/adr/ADR-007-s06-server-validation-contract.md",
+  "date": "2026-09-06",
+  "host": "Windows 11 dev box (Ryzen 7 7445HS, RTX 4050 Laptop 6 GB, 15.2 GB RAM); Docker Desktop 29.4.2, Linux containers",
+  "toolVersions": {
+    "node": "v24.13.0",
+    "go": "golang:1.24-alpine image (go run inside container)",
+    "docker": "29.4.2",
+    "typescriptRunner": "vitest 5.0.0 / plain node for the mirror"
+  },
+  "runner": "node gen-session.mjs; node ts-mirror.mjs sessions/<s>.json; docker run --rm -v C:/Users/lugat/Projects/kwetu:/src -w //src/tools/spikes/s0.6 golang:1.24-alpine go run ./go-validator -in sessions/<s>.json; node write-report.mjs",
+  "method": "Synthetic recorded car path (3600 ticks = 60 s, dt 1/60): 250 m-radius circle, accel-limited ramp 0->20 m/s at 5 m/s^2 (240 ticks) then constant speed. Client integrates exactly at dt (midpoint while accelerating, exact circular chord at constant speed) and reports f32-quantized pos/yaw/speed per tick — the Phase-5 wire encoding. The validator (Go + TS mirror, identical op order) replays from init with client-reported heading/speed CLAMPED to (6 m/s^2, 2.5 rad/s, 55 m/s) and measures |posReplay - posReported| per tick. Tamper: ONE speed hack — ticks 1201-1500 report 4x cruise speed (80 m/s, ramp accel 72 m/s^2 = 12x clamp) while staying on the same circle (yaw rate 0.32 rad/s < clamp), so exactly the speed/accel clamps are exercised.",
+  "probes": {
+    "sessionGenerator": {
+      "params": {
+        "dt": 0.016666666666666666,
+        "ticks": 3600,
+        "radius": 250,
+        "vCruise": 20,
+        "aAccel": 5,
+        "accelTicks": 240,
+        "start": {
+          "pos": [
+            250,
+            0,
+            0
+          ],
+          "yaw": 1.5707963267948966,
+          "speed": 0
+        },
+        "tamper": {
+          "kind": "speed-hack",
+          "startTick": 1201,
+          "endTick": 1500,
+          "rampTicks": 50,
+          "holdTicks": 200,
+          "hackAccel": 72,
+          "hackFactor": 4
+        }
+      },
+      "wireQuantization": "f32 (Math.fround) on init + every reported pos/yaw/speed; t = tick index (seconds = t*dt)",
+      "sessionFileBytes": {
+        "legal": 340277,
+        "tampered": 341297
+      },
+      "perStateJsonBytes": 94.49514023882254,
+      "reportedStateAudit": {
+        "legal": {
+          "maxSpeed": 20,
+          "maxAccel": 5.000038146972656,
+          "maxYawRate": 0.08002281188964844
+        },
+        "tampered": {
+          "maxSpeed": 80,
+          "maxAccel": 72.00027465820312,
+          "maxYawRate": 0.3200197219848633
+        }
+      },
+      "clampCheck": {
+        "legalWithinClamps": true,
+        "tamperSignature": {
+          "reportedMaxSpeed": 80,
+          "reportedMaxAccel": 72.00027465820312,
+          "note": "tamper exceeds maxSpeed (55) and maxAccel (6) clamps; yaw rate stays legal by construction"
+        }
+      },
+      "reproducibleFromGenerator": {
+        "legal": true,
+        "tampered": true
+      }
+    },
+    "validatorContract": {
+      "clamps": {
+        "maxAccel": 6,
+        "maxYawRate": 2.5,
+        "maxSpeed": 55,
+        "minSpeed": 0
+      },
+      "passThresholdSpike": 5,
+      "replayModel": "per tick: w = clamp(wrapAngle(reportedYaw - replayYaw)/dt, -+2.5); v = clamp(reportedSpeed, vPrev -+ 6*dt) then [0,55]; vStep = (vPrev+v)/2 (trapezoidal); yawMid = yaw + w*dt/2; pos += vStep*dt*[cos,sin](yawMid); yaw += w*dt",
+      "serverDoesNot": [
+        "no server-side Rapier or any contact solver (ADR-001 Decision 5; NETWORKING.md §6/§8)",
+        "no collision/crash outcome authority — contact resolution stays client-visual",
+        "no input re-simulation: it only follows clamped client-reported speed/heading"
+      ]
+    },
+    "replayTuning": {
+      "v1_endStepSpeed": {
+        "description": "replay stepped with the reported end-of-tick speed: biases every accelerating tick by a*dt^2/2 (predicted 6.944e-4 m/tick; measured 6.929e-4 m/tick over the 240-tick 5 m/s^2 ramp)",
+        "legal": {
+          "maxDrift": 0.16650085811992044,
+          "maxHeadingDrift": 0,
+          "tickOfMax": 1415,
+          "verdict": "pass"
+        },
+        "tampered": {
+          "maxDrift": 168.87724257783114,
+          "maxHeadingDrift": 0,
+          "tickOfMax": 1477,
+          "verdict": "reject"
+        },
+        "note": "v1 numbers were taken before the generator cruise-path fix; the tuning evidence is the LEGAL run (unchanged capture). v1 tampered (168.877 m) differs from the final capture by <0.1% — conclusion unaffected.",
+        "legalDriftPerAccelTickMeasured": 0.0006929258,
+        "legalDriftPerAccelTickPredicted": 0.0006944444444444444
+      },
+      "v2_trapezoidal": {
+        "description": "final model — step speed = (vPrev + v)/2; legal drift drops 3681x to f32-quantization + scheme noise",
+        "fixRatio": 3680.280071817969
+      }
+    },
+    "legalRun": {
+      "ts": {
+        "result": {
+          "maxDrift": 0.0000452413552422039,
+          "maxHeadingDrift": 0,
+          "tickOfMax": 2994,
+          "verdict": "pass"
+        },
+        "distribution": {
+          "p50": 0.000029181541192071708,
+          "p95": 0.00004115100373285584,
+          "p99": 0.00004355254014159645,
+          "max": 0.0000452413552422039,
+          "mean": 0.000025634150131558748
+        },
+        "maxHeadingDriftRad": 0
+      },
+      "go": {
+        "maxDrift": 0.0000452413552422039,
+        "maxHeadingDrift": 0,
+        "tickOfMax": 2994,
+        "verdict": "pass"
+      },
+      "verdict": "pass (exit 0) — legal drift is f32 wire-quantization + exact-chord-vs-midpoint-Euler scheme noise; no coherent accumulation"
+    },
+    "tamperedRun": {
+      "ts": {
+        "result": {
+          "maxDrift": 169.01845833979195,
+          "maxHeadingDrift": 0,
+          "tickOfMax": 1477,
+          "verdict": "reject"
+        },
+        "distribution": {
+          "p50": 139.85507453787645,
+          "p95": 146.2381563515976,
+          "p99": 166.6417294033863,
+          "max": 169.01845833979195,
+          "mean": 90.08626880639275
+        },
+        "maxHeadingDriftRad": 0
+      },
+      "go": {
+        "maxDrift": 169.01845833979195,
+        "maxHeadingDrift": 0,
+        "tickOfMax": 1477,
+        "verdict": "reject"
+      },
+      "verdict": "reject (exit 1) — validator clamps refuse the 4x speed claim; replay falls ~169 m behind the claim"
+    },
+    "crossLanguage": {
+      "method": "identical f64 op order in Go (math.Mod/Cos/Sin/Sqrt) and JS (%, Math.cos/sin, Math.sqrt); result lines compared byte-wise after newline normalization",
+      "results": {
+        "legal": {
+          "maxDriftAbsDiff": 0,
+          "maxHeadingDriftAbsDiff": 0,
+          "tickOfMaxAgrees": true,
+          "verdictAgrees": true,
+          "bitwiseIdenticalResultLine": true
+        },
+        "tampered": {
+          "maxDriftAbsDiff": 0,
+          "maxHeadingDriftAbsDiff": 0,
+          "tickOfMaxAgrees": true,
+          "verdictAgrees": true,
+          "bitwiseIdenticalResultLine": true
+        }
+      },
+      "summary": "Go (golang:1.24-alpine, Docker) and Node 24 TS mirror produced BYTE-IDENTICAL result lines for both sessions — bitwise cross-language agreement on this workload. This is a measured observation for one host pair, NOT a universal bitwise promise (ADR-001 Decision 5)."
+    },
+    "replayCost": {
+      "note": "per-tick replay cost only — no capacity extrapolation (ROADMAP §1.3; capacity is B-AOI-03/S0.8 + B-SIM-01/Phase 5)",
+      "goInContainer": {
+        "benchRepeats": 2000,
+        "nsPerTick": 81.92409972222222,
+        "env": "golang:1.24-alpine in Docker Linux VM"
+      },
+      "tsOnHost": [
+        {
+          "session": "legal",
+          "benchRepeats": 2000,
+          "nsPerTick": 140.74595833333333
+        },
+        {
+          "session": "tampered",
+          "benchRepeats": 2000,
+          "nsPerTick": 149.8245277777778
+        }
+      ]
+    }
+  },
+  "budgetInputs": {
+    "B-VAL-01": {
+      "quantity": "Legal-path replay max cumulative drift over a 60 s session (m)",
+      "value": 0.0000452413552422039,
+      "also": {
+        "distribution": {
+          "p50": 0.000029181541192071708,
+          "p95": 0.00004115100373285584,
+          "p99": 0.00004355254014159645,
+          "max": 0.0000452413552422039,
+          "mean": 0.000025634150131558748
+        },
+        "maxHeadingDriftRad": 0,
+        "tickOfMax": 2994
+      },
+      "tag": "[MEASURED 2026-09-06, tools/spikes/s0.6 — 3600-tick 250 m-circle capture, f32 wire states, Go 1.24 + TS mirror replay, report.json]"
+    },
+    "B-VAL-02": {
+      "quantity": "Tamper detection margin = tampered max drift / legal max drift (dimensionless)",
+      "value": 3735928.2770141507,
+      "also": {
+        "tamperedMaxDriftM": 169.01845833979195,
+        "tamperedTickOfMax": 1477
+      },
+      "tag": "[MEASURED 2026-09-06, tools/spikes/s0.6 — same replay over the speed-hack capture (4x speed, 300 ticks), report.json]"
+    }
+  }
+}

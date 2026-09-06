@@ -24,6 +24,19 @@
 //   R6  DATA_SOURCES.md §Format column notes — an `ATTRIBUTIONS.md#<slug>` link
 //       must point at an anchor that exists: every such reference in any *.md
 //       resolves to an explicit `<a id="...">` in ATTRIBUTIONS.md.
+//   R7  package.json dependency coverage (CLAUDE.md: "Never add a dependency
+//       without a THIRD_PARTY_ASSETS.md row") — every name in dependencies AND
+//       devDependencies must appear as the name of a code-NN row (boundary-
+//       aware match; annotation-carrying name cells are fine). Transitive
+//       dependencies are NOT checked — only direct declarations are deliberate
+//       adoption decisions. Rows outside the code table (asset/data/gen) never
+//       satisfy coverage.
+//   R8  version drift (the gate, rule 3: a verdict is valid only for the
+//       pinned commit) — for each declared package, every matching code row
+//       whose pin cell carries a comparable version must equal the version
+//       resolved in package-lock.json (packages["node_modules/<name>"].version,
+//       lockfileVersion-1 dependencies fallback). A mismatch fails; an
+//       unpinned row defers with a warning (pin lands at first code commit).
 //
 // Node builtins only (project code, zero dependencies — no ledger row owed).
 // Exit codes: 0 = pass, 1 = violation, 2 = structural error.
@@ -154,6 +167,8 @@ function locateCols(table) {
     idCol: h.findIndex((c) => c === 'id'),
     licCol: h.findIndex((c) => /license/.test(c)),
     attrCol: h.findIndex((c) => /^attribution string/.test(c)),
+    nameCol: h.findIndex((c) => c === 'name'),
+    pinCol: h.findIndex((c) => c === 'pin' || /^pin\b/.test(c)),
   };
 }
 
@@ -177,7 +192,7 @@ export function parseTpaTables(tpaMd) {
   return { code, dataset, gen };
 }
 
-function classifyRows(table) {
+export function classifyRows(table) {
   const ledger = [];
   const placeholders = [];
   const bad = [];
@@ -190,6 +205,77 @@ function classifyRows(table) {
     else placeholders.push(r);
   }
   return { ledger, placeholders, bad };
+}
+
+// ------------------------------------------------- package.json + lockfile
+
+const SEMVER_RE = /\d+\.\d+(?:\.\d+)?(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?/;
+
+/** First comparable version token in a pin cell — null when unpinned or non-semver ("4.x"). */
+export function parsePinVersion(cell) {
+  const m = stripMd(cell).match(SEMVER_RE);
+  return m ? m[0] : null;
+}
+
+function normalizeVersion(v) {
+  return String(v ?? '').trim().replace(/^v/i, '').replace(/^==/, '').trim();
+}
+
+/**
+ * Boundary-aware "does this ledger name cell refer to this npm package?".
+ * Name cells may carry annotations ("@heroiclabs/nakama-js (npm scope; plain
+ * `nakama-js` 404s)", "three.js", "meshoptimizer / gltfpack"), so an exact
+ * cell match is not required — but the match must not continue a longer name:
+ * "vite" must not match "vitest", "i18next" must not match "i18next-conv",
+ * and an unscoped name must not match inside a scope ("three" vs
+ * "@types/three"). '.' and '/' may END a match ("three.js"), never extend it.
+ */
+export function rowNameMatches(nameCell, pkg) {
+  const c = normalizeWs(stripMd(nameCell)).toLowerCase();
+  const p = normalizeWs(String(pkg ?? '')).toLowerCase();
+  if (!p) return false;
+  const extendsName = (ch) => /[a-z0-9@/_.-]/.test(ch);
+  let i = c.indexOf(p);
+  while (i !== -1) {
+    const before = i > 0 ? c[i - 1] : '';
+    const after = i + p.length < c.length ? c[i + p.length] : '';
+    if (!extendsName(before) && !/[a-z0-9@_-]/.test(after)) return true;
+    i = c.indexOf(p, i + 1);
+  }
+  return false;
+}
+
+/** Parse package.json into name → {section, spec} over dependencies + devDependencies. */
+export function parsePackageJson(text) {
+  const out = { names: new Map(), error: null };
+  if (text === null || text === undefined) {
+    out.error = 'not readable';
+    return out;
+  }
+  let pkg;
+  try {
+    pkg = JSON.parse(text);
+  } catch (e) {
+    out.error = e.message;
+    return out;
+  }
+  for (const section of ['dependencies', 'devDependencies']) {
+    const obj = pkg && typeof pkg === 'object' ? pkg[section] : null;
+    if (!obj || typeof obj !== 'object') continue;
+    for (const [name, spec] of Object.entries(obj)) {
+      if (typeof name === 'string' && name) out.names.set(name, { section, spec: String(spec) });
+    }
+  }
+  return out;
+}
+
+/** Resolved version from an npm lockfile: v3 packages["node_modules/<name>"].version, v1 dependencies fallback. */
+export function resolvedLockVersion(lock, name) {
+  const v3 = lock && lock.packages ? lock.packages[`node_modules/${name}`] : null;
+  if (v3 && typeof v3.version === 'string') return v3.version;
+  const v1 = lock && lock.dependencies ? lock.dependencies[name] : null;
+  if (v1 && typeof v1.version === 'string') return v1.version;
+  return null;
 }
 
 /** Evaluate one attribution cell. verdict: ok | deferred | fail */
@@ -451,10 +537,129 @@ function rule6Anchors(mdFiles, canon, out) {
   return refs;
 }
 
+// ------------------------------------------------- R7/R8 dependency ledger
+
+/** The code-NN rows of THIRD_PARTY_ASSETS.md (asset rows in the same table are excluded), or null if the table is unavailable. */
+function codeLedgerRows(tpa) {
+  return tpa ? classifyRows(tpa.code).ledger.filter((r) => r.id.startsWith('code-')) : null;
+}
+
+/**
+ * R7 — package.json dependency coverage. Every name in dependencies AND
+ * devDependencies must match a code-NN row's name cell (rowNameMatches).
+ * Transitive dependencies are NOT checked — npm resolves them, but the row
+ * gate exists to force a deliberate adoption decision, and only direct
+ * declarations are deliberate. Rows outside the code table (asset/data/gen)
+ * never satisfy coverage.
+ */
+function rule7DependencyCoverage(pkgInfo, tpa, out) {
+  const rows = codeLedgerRows(tpa);
+  if (pkgInfo.error) out.fail('R7', `package.json could not be parsed: ${pkgInfo.error}`);
+  if (rows === null || tpa.code.nameCol < 0) {
+    out.fail(
+      'R7',
+      `THIRD_PARTY_ASSETS.md code table unavailable${tpa && tpa.code.nameCol < 0 ? ' (no "name" column)' : ''} — dependency coverage cannot be verified`,
+    );
+    return { packages: pkgInfo.names.size, covered: 0, uncovered: pkgInfo.error ? 0 : pkgInfo.names.size };
+  }
+  out.info(
+    'R7',
+    `dependency coverage: ${pkgInfo.names.size} declared package(s) (dependencies + devDependencies) vs ${rows.length} code-NN row(s); transitive dependencies are NOT checked`,
+  );
+  let covered = 0;
+  let uncovered = 0;
+  for (const [name, meta] of pkgInfo.names) {
+    const hits = rows.filter((r) => rowNameMatches(r.cells[tpa.code.nameCol] ?? '', name));
+    if (hits.length) {
+      covered++;
+      out.info('R7', `${name} (${meta.section}) → ${hits.map((r) => r.id).join(', ')}`);
+      continue;
+    }
+    uncovered++;
+    out.fail(
+      'R7',
+      `${name} (package.json ${meta.section}, spec "${meta.spec}"): no code-NN row in THIRD_PARTY_ASSETS.md — a dependency without a ledger row may not be committed (the gate, rule 1)`,
+    );
+  }
+  return { packages: pkgInfo.names.size, covered, uncovered };
+}
+
+/**
+ * R8 — version drift. For every declared package, each matching code row
+ * whose pin cell carries a comparable version must equal the version resolved
+ * in package-lock.json. An unpinned row defers with a warning (the row format
+ * defers the exact pin to the first code commit); a mismatch fails, because
+ * the recorded license verdict no longer covers what is actually installed
+ * (the gate, rule 3).
+ */
+function rule8VersionDrift(pkgInfo, tpa, lockText, out) {
+  const rows = codeLedgerRows(tpa);
+  let lock = null;
+  if (lockText === null || lockText === undefined) {
+    out.fail('R8', 'package-lock.json not readable — version drift cannot be verified');
+  } else {
+    try {
+      lock = JSON.parse(lockText);
+    } catch (e) {
+      out.fail('R8', `package-lock.json could not be parsed: ${e.message}`);
+    }
+  }
+  if (pkgInfo.error) out.fail('R8', 'package.json could not be parsed — declared packages cannot be enumerated');
+  if (rows === null || tpa.code.nameCol < 0 || tpa.code.pinCol < 0) {
+    out.fail('R8', 'THIRD_PARTY_ASSETS.md code table unavailable (name/pin column missing) — version drift cannot be verified');
+    return { compared: 0, deferred: 0, drifted: 0 };
+  }
+  let compared = 0;
+  let deferred = 0;
+  let drifted = 0;
+  for (const [name] of pkgInfo.names) {
+    const hits = rows.filter((r) => rowNameMatches(r.cells[tpa.code.nameCol] ?? '', name));
+    if (!hits.length) continue; // R7 already reported the gap
+    const resolved = lock ? resolvedLockVersion(lock, name) : null;
+    if (!resolved) {
+      out.fail('R8', `${name}: no resolved version in package-lock.json (expected packages["node_modules/${name}"].version)`);
+      continue;
+    }
+    for (const r of hits) {
+      const pinCell = stripMd(r.cells[tpa.code.pinCol] ?? '');
+      const pin = parsePinVersion(pinCell);
+      if (pin === null) {
+        deferred++;
+        out.warn(
+          'R8',
+          `${r.id} (${name}): pin cell carries no comparable version ("${normalizeWs(pinCell)}") — drift check deferred until the pin lands (pin at first code commit)`,
+        );
+        continue;
+      }
+      compared++;
+      if (normalizeVersion(pin) !== normalizeVersion(resolved)) {
+        drifted++;
+        out.fail(
+          'R8',
+          `${r.id} (${name}): ledger pin ${pin} ≠ package-lock.json resolved ${resolved} — a verdict is valid only for the pinned version (the gate, rule 3): re-verify the upstream license at ${resolved} and update the row`,
+        );
+      } else {
+        out.info('R8', `${r.id} (${name}): pin ${pin} = package-lock.json ${resolved}`);
+      }
+    }
+  }
+  out.info('R8', `version drift: ${compared} row pin(s) compared against package-lock.json, ${drifted} drifted, ${deferred} deferred (row unpinned)`);
+  return { compared, deferred, drifted };
+}
+
 // ----------------------------------------------------------------- harness
 
 /** Run every rule over the given document texts. */
-export function checkAll({ tpaMd, attributionsMd, dataSourcesMd, readmeMd, masterPromptMd, mdFiles = [] }) {
+export function checkAll({
+  tpaMd,
+  attributionsMd,
+  dataSourcesMd,
+  readmeMd,
+  masterPromptMd,
+  packageJsonText = null,
+  lockfileText = null,
+  mdFiles = [],
+}) {
   const failures = [];
   const warnings = [];
   const infos = [];
@@ -491,6 +696,9 @@ export function checkAll({ tpaMd, attributionsMd, dataSourcesMd, readmeMd, maste
   };
   rule5DocQuotes(readmeMd ?? '', masterPromptMd ?? '', canon, out);
   counts.anchorRefs = rule6Anchors(mdFiles, canon, out);
+  const pkgInfo = parsePackageJson(packageJsonText);
+  counts.coverage = rule7DependencyCoverage(pkgInfo, tpa, out);
+  counts.drift = rule8VersionDrift(pkgInfo, tpa, lockfileText, out);
 
   const rules = [
     { id: 'R0', name: 'required documents present' },
@@ -500,6 +708,8 @@ export function checkAll({ tpaMd, attributionsMd, dataSourcesMd, readmeMd, maste
     { id: 'R4', name: 'DATA_SOURCES.md provenance rows: source + license + pin' },
     { id: 'R5', name: 'doc-quoted strings byte-match ATTRIBUTIONS.md (README + MASTER_PROMPT §44)' },
     { id: 'R6', name: 'ATTRIBUTIONS.md# anchor references resolve' },
+    { id: 'R7', name: 'package.json dependencies covered by code-NN ledger rows (transitive deps not checked)' },
+    { id: 'R8', name: 'ledger pin = package-lock.json resolved version (no drift)' },
   ].map((r) => ({
     ...r,
     status: failures.some((f) => f.rule === r.id) ? 'fail' : warnings.some((w) => w.rule === r.id) ? 'warn' : 'pass',
@@ -564,8 +774,8 @@ function printReport(res, root) {
   return lines.join('\n');
 }
 
-export function main() {
-  const root = repoRoot();
+/** Gather the repo documents the checker reads (shared by main() and tools/ledger/report.mjs). */
+export function collectRepoInputs(root = repoRoot()) {
   const read = (name) => {
     try {
       return readFileSync(join(root, name), 'utf8');
@@ -574,16 +784,23 @@ export function main() {
     }
   };
   const mdFiles = listMarkdownFiles(root).map((f) => ({ rel: f.rel, text: readFileSync(f.abs, 'utf8') }));
+  return {
+    tpaMd: read('THIRD_PARTY_ASSETS.md'),
+    attributionsMd: read('ATTRIBUTIONS.md'),
+    dataSourcesMd: read('DATA_SOURCES.md'),
+    readmeMd: read('README.md'),
+    masterPromptMd: read('MASTER_PROMPT.md'),
+    packageJsonText: read('package.json'),
+    lockfileText: read('package-lock.json'),
+    mdFiles,
+  };
+}
+
+export function main() {
+  const root = repoRoot();
   let res;
   try {
-    res = checkAll({
-      tpaMd: read('THIRD_PARTY_ASSETS.md'),
-      attributionsMd: read('ATTRIBUTIONS.md'),
-      dataSourcesMd: read('DATA_SOURCES.md'),
-      readmeMd: read('README.md'),
-      masterPromptMd: read('MASTER_PROMPT.md'),
-      mdFiles,
-    });
+    res = checkAll(collectRepoInputs(root));
   } catch (e) {
     console.error(`structural error: ${e.message}`);
     return 2;

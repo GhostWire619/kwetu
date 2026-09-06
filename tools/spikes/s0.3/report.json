@@ -1,13 +1,16 @@
 {
   "spike": "S0.3 — initial load budget (per-package bytes)",
-  "measuredAt": "2026-09-05T19:05:00.504Z",
+  "measuredAt": "2026-09-05T22:18:37.252Z",
+  "measuredAtLocal": "2026-09-06 1:18:37 GMT+3 (host local time — date-stamp tags use the local date)",
   "method": {
     "builder": "vite 8.2.2 production build (rolldown bundler — vite 8 default), one entry per build, no shared chunks",
     "raw": "same build with minify disabled — structural bundle size",
     "minified": "vite production default minifier (vite 8 = oxc; the esbuild minifier path is deprecated in vite 8 and errors without esbuild installed separately)",
     "gzip": "node zlib gzipSync level 9 over the concatenated minified JS output",
+    "staticAssets": "files read directly from node_modules as shipped (no build) and gzipSync level 9 — used for the Basis transcoder pair, the meshopt decoder module, KTX2Loader (reference) and the locale bundles",
     "units": "bytes",
-    "realismNote": "Imports are kept realistic (the surface the Phase 1 shell will import); no aggressive tree-shaking tricks, no dead-code stripping beyond vite defaults."
+    "realismNote": "Imports are kept realistic (the surface the Phase 1 shell will import); no aggressive tree-shaking tricks, no dead-code stripping beyond vite defaults.",
+    "reproducibility": "Baseline entries (three, rapier, astronomy, i18next, shell) keep their 2026-09-05 build config untouched and must reproduce byte-identically — report.test.mjs asserts the committed 2026-09-05 values."
   },
   "toolVersions": {
     "node": "v24.13.0",
@@ -15,7 +18,9 @@
     "three": "0.185.1",
     "rapierDeterministicCompat": "0.20.0",
     "astronomyEngine": "2.1.19",
-    "i18next": "26.4.2"
+    "i18next": "26.4.2",
+    "nakamaJs": "2.8.0",
+    "livekitClient": "2.22.2"
   },
   "entries": {
     "three": {
@@ -107,6 +112,96 @@
       },
       "units": "bytes",
       "nonJsAssets": []
+    },
+    "nakama": {
+      "entry": "nakama",
+      "files": {
+        "raw": [
+          "entry.js 178386 B"
+        ],
+        "min": [
+          "entry.js 99593 B"
+        ]
+      },
+      "jsTotalBytes": {
+        "raw": 178386,
+        "minified": 99593,
+        "gzip9": 13137
+      },
+      "units": "bytes",
+      "nonJsAssets": []
+    },
+    "livekit": {
+      "entry": "livekit",
+      "files": {
+        "raw": [
+          "entry.js 1024220 B"
+        ],
+        "min": [
+          "entry.js 514113 B"
+        ]
+      },
+      "jsTotalBytes": {
+        "raw": 1024220,
+        "minified": 514113,
+        "gzip9": 131745
+      },
+      "units": "bytes",
+      "nonJsAssets": []
+    },
+    "meshopt": {
+      "entry": "meshopt",
+      "files": {
+        "raw": [
+          "entry.js 29065 B"
+        ],
+        "min": [
+          "entry.js 26463 B"
+        ]
+      },
+      "jsTotalBytes": {
+        "raw": 29065,
+        "minified": 26463,
+        "gzip9": 7231
+      },
+      "units": "bytes",
+      "nonJsAssets": []
+    },
+    "shell-strict": {
+      "entry": "shell-strict",
+      "files": {
+        "raw": [
+          "entry.js 4073829 B"
+        ],
+        "min": [
+          "entry.js 3400062 B"
+        ]
+      },
+      "jsTotalBytes": {
+        "raw": 4073829,
+        "minified": 3400062,
+        "gzip9": 1215356
+      },
+      "units": "bytes",
+      "nonJsAssets": []
+    },
+    "fullshell": {
+      "entry": "fullshell",
+      "files": {
+        "raw": [
+          "entry.js 5476480 B"
+        ],
+        "min": [
+          "entry.js 4130486 B"
+        ]
+      },
+      "jsTotalBytes": {
+        "raw": 5476480,
+        "minified": 4130486,
+        "gzip9": 1401137
+      },
+      "units": "bytes",
+      "nonJsAssets": []
     }
   },
   "rapierWasmStandalone": {
@@ -116,6 +211,74 @@
     "units": "bytes",
     "note": "Reference figure only: the pinned deterministic-compat package base64-inlines this WASM into its JS (rapier.mjs), so the built JS already carries it — do not add this row to the JS figure in B-LOAD-09. A separate-WASM shipping configuration would transfer this raw/gzip figure instead."
   },
+  "rapierGlueDerived": {
+    "source": "dist/rapier/min/entry.js with the single base64 WASM literal deleted",
+    "blobChars": 2730852,
+    "glueMinifiedBytes": 156866,
+    "glueGzip9Bytes": 28836,
+    "note": "DERIVED from the built compat artifact, not a build of the real separate-WASM package (@dimforge/rapier3d-deterministic 0.20.0 exists on the registry but is not installed here). A real swap would also change the init() call shape slightly; treat this as an estimate with a stated method."
+  },
+  "staticAssets": {
+    "basisTranscoderJs": {
+      "file": "node_modules/three/examples/jsm/libs/basis/basis_transcoder.js",
+      "rawBytes": 57529,
+      "gzip9Bytes": 15143,
+      "units": "bytes",
+      "note": "The Basis/KTX2 transcoder JS exactly as three 0.185.1 ships it. KTX2Loader fetches this file and the .wasm from a transcoder path at runtime — they are static assets, never bundled into app JS."
+    },
+    "basisTranscoderWasm": {
+      "file": "node_modules/three/examples/jsm/libs/basis/basis_transcoder.wasm",
+      "rawBytes": 527333,
+      "gzip9Bytes": 247535,
+      "units": "bytes",
+      "note": "The Basis/KTX2 transcoder WASM exactly as three 0.185.1 ships it. Fetched at runtime alongside basis_transcoder.js by KTX2Loader.setTranscoderPath()."
+    },
+    "basisTranscoderPairGzip9": 262678,
+    "meshoptDecoderShipped": {
+      "file": "node_modules/three/examples/jsm/libs/meshopt_decoder.module.js",
+      "rawBytes": 29256,
+      "gzip9Bytes": 7804,
+      "units": "bytes",
+      "note": "Unminified module as shipped. The WASM payload is EMBEDDED inside this JS (meshoptimizer's own string encoding, not base64) — NO separate .wasm file ships in three's path (verified: the only .wasm files under examples/jsm/libs are basis/ and draco/). The bundled+minified figure is entries.meshopt."
+    },
+    "ktx2LoaderReference": {
+      "file": "node_modules/three/examples/jsm/loaders/KTX2Loader.js",
+      "rawBytes": 36567,
+      "gzip9Bytes": 9011,
+      "units": "bytes",
+      "note": "REFERENCE ONLY, not a budget row: unminified loader source as shipped. When the app imports it, this code rides in the app bundle MINIFIED (B-LOAD-07 territory), so this raw-file figure overstates the bundled cost."
+    },
+    "livekitE2eeWorkerReference": {
+      "file": "node_modules/livekit-client/dist/livekit-client.e2ee.worker.mjs",
+      "rawBytes": 292384,
+      "gzip9Bytes": 68605,
+      "units": "bytes",
+      "note": "REFERENCE ONLY, not in B-LOAD-04: the optional E2EE worker the app would import via the livekit-client/e2ee-worker subpath and hand to the Room as a consumer-provided Worker. Kwetu does not plan E2EE, so it is excluded from the first-visit figure."
+    }
+  },
+  "locales": {
+    "keyParityChecked": true,
+    "keyCount": 112,
+    "en": {
+      "file": "entries/locale-full.en.json",
+      "keyCount": 112,
+      "rawBytes": 3538,
+      "gzip9Bytes": 1210,
+      "compactGzip9Bytes": 1192,
+      "units": "bytes",
+      "note": "Authored JSON as served (primary figure) plus a compact-JSON re-serialization variant. Locales load lazily per docs/swahili-i18n.md, so this is an asset fetch, not bundle bytes. Representative app namespace fixture — the real key namespace is owned by docs/swahili-i18n.md (S0.10)."
+    },
+    "sw": {
+      "file": "entries/locale-full.sw.json",
+      "keyCount": 112,
+      "rawBytes": 3667,
+      "gzip9Bytes": 1346,
+      "compactGzip9Bytes": 1329,
+      "units": "bytes",
+      "note": "Authored JSON as served (primary figure) plus a compact-JSON re-serialization variant. Locales load lazily per docs/swahili-i18n.md, so this is an asset fetch, not bundle bytes. Representative app namespace fixture — the real key namespace is owned by docs/swahili-i18n.md (S0.10)."
+    },
+    "note": "The 8-key entries/locale.sw.json fixture is UNCHANGED from 2026-09-05 so shell.ts keeps reproducing; the representative ~100-string namespace lives in locale-full.{en,sw}.json."
+  },
   "derived": {
     "shellOverheadVsDepSum": {
       "note": "DERIVED, not a direct measurement: shell minus the four single-entry minified figures — a crude proxy for app-shell code + locale JSON in this spike entry only, not the real B-LOAD-07 shell.",
@@ -123,13 +286,110 @@
       "gzipBytesDelta": 1644
     },
     "shellIfWasmShippedSeparately": {
-      "note": "DERIVED estimate, not a build: shell gzip minus the rapier-entry JS gzip (the base64-inlined WASM portion) plus the standalone .wasm gzip — the transfer a separate-WASM shipping configuration would plausibly approach. A bound from base64-vs-raw arithmetic; never cite it as a measurement.",
+      "note": "DERIVED estimate, not a build: shell gzip minus the rapier-entry JS gzip (the base64-inlined WASM portion) plus the standalone .wasm gzip — the transfer a separate-WASM shipping configuration would plausibly approach. A bound from base64-vs-raw arithmetic; never cite it as a measurement. Superseded for decisions by rapierWasmShipping, which accounts for the JS glue separately.",
       "gzipBytesEstimate": 933386
+    },
+    "shellStrict": {
+      "note": "DERIVED per the S0.3 task, not independently re-measured by this arithmetic: previous shell entry gzip MINUS astronomy-engine gzip MINUS i18next gzip. The direct shell-strict entry build is the measured cross-check (entries[shell-strict]). HONEST COMPOSITION: this figure still CONTAINS three + Rapier compat (they are bundled inside the shell entry) plus the ~1.6 KB app-glue/locale residue — it is the first-visit bundle minus the two removed libraries, NOT an app-code-only shell.",
+      "gzipBytes": 1216417,
+      "crossCheck": {
+        "shellStrictEntryGzip9": 1215356,
+        "directVsDerivedDelta": -1061,
+        "note": "Single-stream gzip is not strictly additive across deletions (dictionary/alignment effects), so the direct build and the subtraction differ slightly; the direct build is the better figure and both are recorded."
+      }
+    },
+    "rapierWasmShipping": {
+      "question": "B-LOAD-02 shipping config: compat base64-inlined vs separate .wasm fetch (ADR-004 decides; the Phase-1 build confirms)",
+      "compatAsShipsGzip9": 1088335,
+      "standaloneWasmGzip9": 772479,
+      "grossInliningCostGzip9": 315856,
+      "separateWasmEstimate": {
+        "glueGzip9": 28836,
+        "wasmGzip9": 772479,
+        "estimatedTotalGzip9": 801315,
+        "netSavingVsCompatGzip9": 287020,
+        "method": "DERIVED from the built compat artifact, not a build of the real separate-WASM package (@dimforge/rapier3d-deterministic 0.20.0 exists on the registry but is not installed here). A real swap would also change the init() call shape slightly; treat this as an estimate with a stated method.",
+        "extraCostsNotInFigure": "a second HTTP request + cache entry, correct application/wasm MIME + CORS, and a fetch/instantiate path replacing the inlined init()"
+      },
+      "nonCompatPackage": {
+        "name": "@dimforge/rapier3d-deterministic",
+        "version": "0.20.0",
+        "note": "Registry-verified 2026-09-06 (npm view): latest = 0.20.0, same version as the pinned compat build — a same-pin swap is possible. NOT installed in this spike; its glue is estimated from the compat artifact above."
+      }
+    },
+    "firstVisitProvisional": {
+      "note": "DERIVED SUM over the inclusion list — not a single end-to-end transfer measurement. The fullshell entry is one measured gzip stream (no double counting inside it); the remaining components are runtime-fetched static files added on top. Known small over-count: fullshell still carries the 8-key locale fixture inline (the real app loads locales lazily), worth roughly 0.1 KB gzip.",
+      "inclusionList": [
+        "fullshell entry (single measured gzip stream): three + Rapier compat (base64-inlined WASM) + nakama-js + livekit-client + astronomy-engine + i18next + meshopt decoder + app glue + 8-key locale fixture",
+        "basis_transcoder.js (runtime-fetched static, gzip9 as shipped)",
+        "basis_transcoder.wasm (runtime-fetched static, gzip9 as shipped)",
+        "locale-full EN (default lazy locale bundle, gzip9 as authored — replaces the fixture)"
+      ],
+      "components": {
+        "fullshellGzip9": 1401137,
+        "basisTranscoderJsGzip9": 15143,
+        "basisTranscoderWasmGzip9": 247535,
+        "localeEnGzip9": 1210
+      },
+      "totalGzip9": 1665025,
+      "excluded": [
+        "livekit-client e2ee worker (optional consumer-provided asset, E2EE not planned)",
+        "KTX2Loader.js / MeshoptDecoder loader-side JS beyond what fullshell already carries (meshopt decoder module IS in fullshell; KTX2Loader is not — open item)",
+        "warm-revisit transfer (B-LOAD-10) — needs a real CDN + service-worker/Cache-API probe"
+      ]
+    }
+  },
+  "budgetFigureSummary": {
+    "B-LOAD-01": {
+      "value": 126438,
+      "method": "baseline wave 2026-09-05, reproduced 2026-09-06"
+    },
+    "B-LOAD-02": {
+      "value": 1088335,
+      "method": "baseline wave 2026-09-05, reproduced 2026-09-06; standalone .wasm reference + separate-WASM estimate in rapierWasmShipping"
+    },
+    "B-LOAD-03": {
+      "value": 13137,
+      "method": "entries.nakama — Client + createSocket, ESM dist (whatwg-fetch carried inline)"
+    },
+    "B-LOAD-04": {
+      "value": 131745,
+      "method": "entries.livekit — Room + track imports (RemoteAudioTrack as value); E2EE worker excluded"
+    },
+    "B-LOAD-05": {
+      "value": 262678,
+      "method": "basis_transcoder.js + basis_transcoder.wasm as shipped in three 0.185.1, gzip9 each, summed"
+    },
+    "B-LOAD-06": {
+      "value": 7804,
+      "method": "shipped meshopt_decoder.module.js (WASM embedded in the JS — no separate .wasm ships); bundled figure entries.meshopt"
+    },
+    "B-LOAD-07": {
+      "value": 1216417,
+      "method": "DERIVED subtraction per task; direct shell-strict build cross-check recorded"
+    },
+    "B-LOAD-08": {
+      "value": "sw 1346 / EN 1210",
+      "method": "112-key namespace JSON as served, gzip9; locales load lazily"
+    },
+    "B-LOAD-09": {
+      "value": 1665025,
+      "method": "DERIVED SUM, inclusion list in firstVisitProvisional; fullshell single-stream build is the primary component"
+    },
+    "B-LOAD-10": {
+      "value": null,
+      "method": "NOT measurable by this probe — needs a real CDN + service-worker/Cache-API warm measurement"
     }
   },
   "scopeNotes": [
     "Rapier WASM is measured separately (rapierWasmStandalone) and is base64-inlined in the compat JS — the rapier entry JS figure already includes it.",
-    "B-LOAD-03 (nakama-js), B-LOAD-04 (livekit-client), B-LOAD-05 (KTX2/Basis transcoder), B-LOAD-06 (meshopt decoder) are NOT measured by this probe run — those packages are not installed at scaffold.",
-    "B-LOAD-09 (total first visit) and B-LOAD-10 (warm re-visit) are NOT computable from this run — they need the full package set and a Cache-API/IndexedDB probe."
+    "B-LOAD-03 (nakama-js) and B-LOAD-04 (livekit-client) are measured as byte probes: no server is contacted, no connection is made. The figures are transfer-size estimates for the shipping bundles, not protocol benchmarks.",
+    "livekit-client: the optional E2EE worker (livekit-client/e2ee-worker subpath, a consumer-provided Worker) is NOT in the B-LOAD-04 figure; its shipped-file size is recorded in staticAssets.livekitE2eeWorkerReference. Kwetu does not plan E2EE.",
+    "B-LOAD-05 figures are the two Basis transcoder files AS SHIPPED (unminified vendor files, runtime-fetched); the KTX2Loader.js reference in staticAssets is unminified loader source and overstates its bundled cost.",
+    "B-LOAD-06: three ships NO separate meshopt .wasm — the payload is embedded in meshopt_decoder.module.js (meshoptimizer string encoding). entries.meshopt gives the bundled+minified figure; staticAssets.meshoptDecoderShipped gives the shipped-file figure.",
+    "Bundler observation (measured 2026-09-06): an entry that merely RE-EXPORTS the meshopt decoder tree-shakes to 0 bytes in a vite 8 (rolldown) app build — the decoder must be consumed (await MeshoptDecoder.ready, the GLTFLoader pattern) to be retained. Same discipline applies to any pure-export addon in the Phase 1 shell.",
+    "B-LOAD-07: the shell entry is a combined bundle — its strict figure (derived) still carries three + Rapier; the app-code-only residue is derived.shellOverheadVsDepSum (~1.6 KB gzip) and the REAL app shell (TS + CSS) is measured at Phase 1, whose exit criterion records shell transfer.",
+    "B-LOAD-09 is a DERIVED SUM over the stated inclusion list, anchored on the measured single-stream fullshell build; it is not an end-to-end transfer measurement.",
+    "B-LOAD-10 (warm revisit) is NOT measured — a static gzip probe cannot measure Cache-API/IndexedDB warm behaviour; it needs a real CDN + service-worker probe."
   ]
 }

@@ -11,6 +11,7 @@ dist/
 build/
 coverage/
 *.tsbuildinfo
+.vitest/
 
 # Env / secrets — never commit keys (see ARCHITECTURE.md §Security)
 .env

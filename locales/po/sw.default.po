@@ -1,0 +1,252 @@
+# Kwetu shell UI strings — Swahili (Kiswahili) locale.
+# Source of truth: gettext PO (docs/swahili-i18n.md §2). msgid is the English
+# source string; msgctxt carries the screen path (<screen>/, snake_case,
+# trailing slash). Placeholders are i18next tokens {{token}}, never printf.
+#
+# EVERY sw msgstr below carries the `#, fuzzy` flag: these are agent-drafted
+# renderings (docs/swahili-i18n.md §1.4) pending the native-speaker review
+# gate. Nothing here is approved sw copy yet.
+#
+# Term notes for the reviewer (draft renderings, per the §8 glossary seed):
+#   Play → Cheza, Settings → Mipangilio, Continue → Endelea, Stop → Simama,
+#   Sound/Audio → Sauti, Players → Wachezaji, Scroll → Jonga (verify against
+#   "sogeza"; TUKI glosses "jonga" as gaze/stare), Mute → Nyamazisha.
+#   "Jumuishia" (suggested for the UI set) does not fit any shell string in
+#   this file and was left out rather than forced — glossary item.
+#   "Ping" is left as a loanword.
+#
+# Compiled with tools/spikes/s0.10/i18n/compile.mjs (i18next-conv CLI + contract
+# normalizer) to locales/sw/translation.json.
+msgid ""
+msgstr ""
+"Project-Id-Version: Kwetu ui\n"
+"Language: sw\n"
+"Language-Team: Kwetu\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#, fuzzy
+msgctxt "main_menu/"
+msgid "Play"
+msgstr "Cheza"
+
+#, fuzzy
+msgctxt "main_menu/"
+msgid "Continue"
+msgstr "Endelea"
+
+#, fuzzy
+msgctxt "main_menu/"
+msgid "New Game"
+msgstr "Mchezo Mpya"
+
+#, fuzzy
+msgctxt "main_menu/"
+msgid "Join World"
+msgstr "Jiunge na Ulimwengu"
+
+#, fuzzy
+msgctxt "main_menu/"
+msgid "Settings"
+msgstr "Mipangilio"
+
+#, fuzzy
+msgctxt "main_menu/"
+msgid "Credits"
+msgstr "Wachangiaji"
+
+#, fuzzy
+msgctxt "main_menu/"
+msgid "Quit"
+msgstr "Toka"
+
+#. sw marks one/other for human nouns: mchezaji (one) / wachezaji (many).
+#, fuzzy
+msgctxt "main_menu/"
+msgid "{{count}} player online"
+msgid_plural "{{count}} players online"
+msgstr[0] "Mchezaji {{count}} mtandaoni"
+msgstr[1] "Wachezaji {{count}} mtandaoni"
+
+#, fuzzy
+msgctxt "main_menu/"
+msgid "Welcome to Kwetu"
+msgstr "Karibu Kwetu"
+
+#, fuzzy
+msgctxt "main_menu/"
+msgid "Loading world…"
+msgstr "Inapakia ulimwengu…"
+
+#, fuzzy
+msgctxt "settings/"
+msgid "Back"
+msgstr "Nyuma"
+
+#, fuzzy
+msgctxt "settings/"
+msgid "Apply"
+msgstr "Tumia"
+
+#, fuzzy
+msgctxt "settings/"
+msgid "Cancel"
+msgstr "Ghairi"
+
+#, fuzzy
+msgctxt "settings/"
+msgid "Save"
+msgstr "Hifadhi"
+
+#, fuzzy
+msgctxt "settings/"
+msgid "Language"
+msgstr "Lugha"
+
+#, fuzzy
+msgctxt "settings/"
+msgid "Display"
+msgstr "Onyesho"
+
+#, fuzzy
+msgctxt "settings/"
+msgid "Fullscreen"
+msgstr "Skrini kamili"
+
+#, fuzzy
+msgctxt "settings/"
+msgid "Graphics Quality"
+msgstr "Ubora wa Michoro"
+
+#, fuzzy
+msgctxt "settings/"
+msgid "Controls"
+msgstr "Vidhibiti"
+
+#, fuzzy
+msgctxt "settings/"
+msgid "Mouse Sensitivity"
+msgstr "Uhisiaji wa Kipanya"
+
+#, fuzzy
+msgctxt "settings/"
+msgid "Reset to Defaults"
+msgstr "Rejesha Mipangilio ya Awali"
+
+#, fuzzy
+msgctxt "settings/audio/"
+msgid "Audio"
+msgstr "Sauti"
+
+#, fuzzy
+msgctxt "settings/audio/"
+msgid "Master Volume"
+msgstr "Sauti Kuu"
+
+#, fuzzy
+msgctxt "settings/audio/"
+msgid "Music Volume"
+msgstr "Sauti ya Muziki"
+
+#, fuzzy
+msgctxt "settings/audio/"
+msgid "Mute All"
+msgstr "Nyamazisha Zote"
+
+#, fuzzy
+msgctxt "settings/audio/"
+msgid "Voice Chat"
+msgstr "Mazungumzo ya Sauti"
+
+#, fuzzy
+msgctxt "settings/audio/"
+msgid "Microphone"
+msgstr "Kipaza Sauti"
+
+#, fuzzy
+msgctxt "settings/audio/"
+msgid "Push to Talk"
+msgstr "Bonyeza Kuzungumza"
+
+#, fuzzy
+msgctxt "settings/audio/"
+msgid "On"
+msgstr "Imewashwa"
+
+#, fuzzy
+msgctxt "settings/audio/"
+msgid "Off"
+msgstr "Imezimwa"
+
+#, fuzzy
+msgctxt "hud/"
+msgid "Speed"
+msgstr "Kasi"
+
+#, fuzzy
+msgctxt "hud/"
+msgid "Altitude"
+msgstr "Kimo"
+
+#, fuzzy
+msgctxt "hud/"
+msgid "Heading"
+msgstr "Mwelekeo"
+
+#, fuzzy
+msgctxt "hud/"
+msgid "Position"
+msgstr "Mahali"
+
+#, fuzzy
+msgctxt "hud/"
+msgid "Fuel"
+msgstr "Mafuta"
+
+#, fuzzy
+msgctxt "hud/"
+msgid "Time"
+msgstr "Muda"
+
+#. Loanword kept (see header note) — reviewer may prefer a sw rendering.
+#, fuzzy
+msgctxt "hud/"
+msgid "Ping"
+msgstr "Ping"
+
+#, fuzzy
+msgctxt "hud/"
+msgid "Frame Rate"
+msgstr "Fremu kwa Sekunde"
+
+#, fuzzy
+msgctxt "hud/"
+msgid "Paused"
+msgstr "Imesimama"
+
+#, fuzzy
+msgctxt "hud/"
+msgid "Stop"
+msgstr "Simama"
+
+#. Jonga = scroll (suggested UI term; native review to confirm vs "sogeza").
+#, fuzzy
+msgctxt "hud/"
+msgid "Scroll to zoom"
+msgstr "Jonga ili kukuza"
+
+#, fuzzy
+msgctxt "hud/"
+msgid "Chat"
+msgstr "Mazungumzo"
+
+#. sw numeral phrases keep the singular noun form for non-human nouns
+#. ("ujumbe + numeral"), so both plural categories render identically here.
+#, fuzzy
+msgctxt "hud/"
+msgid "{{count}} unread message"
+msgid_plural "{{count}} unread messages"
+msgstr[0] "Ujumbe {{count}} haujasomwa"
+msgstr[1] "Ujumbe {{count}} haujasomwa"

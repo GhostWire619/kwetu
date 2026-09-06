@@ -1,0 +1,365 @@
+{
+  "schema": "kwetu.golden.ephemeris/1",
+  "generatedUtc": "2026-09-05T22:07:37+00:00",
+  "generator": "tools/oracle/generate_golden.py",
+  "oracle": {
+    "library": "skyfield",
+    "skyfieldVersion": "1.55",
+    "pythonVersion": "3.14.2",
+    "kernel": {
+      "file": "de440s.bsp",
+      "sha256": "c1c7feeab882263fc493a9d5a5b2ddd71b54826cdf65d8d17a76126b260a49f2",
+      "bytes": 32726016,
+      "sourceUrl": "https://ssd.jpl.nasa.gov/ftp/eph/planets/bsp/de440s.bsp",
+      "dateRange": "1849-2150 [EXTERNAL \u2014 JPL DE440/DE440s release notes]",
+      "targets": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        199,
+        299,
+        301,
+        399
+      ]
+    },
+    "conventions": {
+      "frame": "ICRF axes exactly as tabulated in de440s.bsp",
+      "geocentricRows": "astrometric: origin = Earth geocenter (SPICE 399), light-travel-time corrected, NO aberration, NO deflection; skyfield earth.at(t).observe(body).position.km",
+      "marsRow": "SPICE body 4 (Mars system barycenter); de440s has no Mars center (499); barycenter-center offset < 1 m [derived]",
+      "earthRow": "geometric same-instant kernel positions (no light time): 399 barycentric, 3 barycentric, and their difference (EMB -> Earth offset)",
+      "topocentricRows": "WGS84 lat/lon, apparent().altaz(): aberration + gravitational deflection applied, NO refraction (pressure 0), azimuth clockwise from north, elevation 0 m above the WGS84 ellipsoid, no polar motion",
+      "time": "skyfield load.timescale(builtin=True): bundled leap seconds + builtin delta-T approximation, no finals2000A; ttJulianDate (TT JD) and ttDaysSinceJ2000TT (TT days after JD 2451545.0) recorded per row so consumers evaluate at the identical TT instant \u2014 astronomy-engine's FromTerrestrialTime takes the days-since-J2000 form"
+    },
+    "site": {
+      "name": "Dar es Salaam seafront (COORDINATE_SYSTEM.md \u00a712 site)",
+      "lat_deg": -6.79,
+      "lon_deg": 39.21,
+      "elevation_m": 0
+    },
+    "regenerateCommand": "python tools/oracle/generate_golden.py"
+  },
+  "rows": [
+    {
+      "isoUtc": "1990-01-01T00:00:00Z",
+      "ttJulianDate": 2447892.500661852,
+      "ttDaysSinceJ2000TT": -3652.4993381481618,
+      "deltaTSeconds": 56.8552701,
+      "geocentricAstrometricICRFkm": {
+        "sun": {
+          "x": 26673192.19447107,
+          "y": -132727701.66775791,
+          "z": -57548009.304506786
+        },
+        "moon": {
+          "x": 318188.1812996061,
+          "y": -194096.0016762357,
+          "z": -77804.1205345214
+        },
+        "marsBarycenter": {
+          "x": -119406969.55088505,
+          "y": -297523593.98318714,
+          "z": -129181012.09817138
+        }
+      },
+      "earthBarycentricICRFkm": {
+        "x": -26773870.10183698,
+        "y": 132759797.16358496,
+        "z": 57557466.19844402
+      },
+      "embBarycentricICRFkm": {
+        "x": -26770004.380762182,
+        "y": 132757438.71744858,
+        "z": 57556520.80568658
+      },
+      "embToEarthICRFkm": {
+        "x": -3865.721074797213,
+        "y": 2358.4461363852024,
+        "z": 945.3927574381232
+      }
+    },
+    {
+      "isoUtc": "1999-12-31T12:00:00Z",
+      "ttJulianDate": 2451544.0007428704,
+      "ttDaysSinceJ2000TT": -0.9992571296170354,
+      "deltaTSeconds": 63.82802705,
+      "geocentricAstrometricICRFkm": {
+        "sun": {
+          "x": 23922820.29110212,
+          "y": -133169930.00352664,
+          "z": -57735558.725676164
+        },
+        "moon": {
+          "x": -339881.4563732029,
+          "y": -203516.3324597758,
+          "z": -48548.97798853784
+        },
+        "marsBarycenter": {
+          "x": 231857844.97999996,
+          "y": -135047305.55911174,
+          "z": -64218900.39666062
+        }
+      },
+      "earthBarycentricICRFkm": {
+        "x": -24991335.040182956,
+        "y": 132774910.38782142,
+        "z": 57597949.71965575
+      },
+      "embBarycentricICRFkm": {
+        "x": -24995465.274134535,
+        "y": 132772437.4590292,
+        "z": 57597359.78387762
+      },
+      "embToEarthICRFkm": {
+        "x": 4130.233951579779,
+        "y": 2472.9287922233343,
+        "z": 589.9357781335711
+      }
+    },
+    {
+      "isoUtc": "2009-03-20T11:44:00Z",
+      "ttJulianDate": 2454910.9896549075,
+      "ttDaysSinceJ2000TT": 3365.989654907491,
+      "deltaTSeconds": 65.84467017333348,
+      "geocentricAstrometricICRFkm": {
+        "sun": {
+          "x": 148994126.83423272,
+          "y": -301869.4004588712,
+          "z": -131513.25705337338
+        },
+        "moon": {
+          "x": 129970.80570086448,
+          "y": -345774.32292015705,
+          "z": -162856.2005916313
+        },
+        "marsBarycenter": {
+          "x": 297988043.20242786,
+          "y": -130314445.03697468,
+          "z": -63789072.48860377
+        }
+      },
+      "earthBarycentricICRFkm": {
+        "x": -149374555.0552058,
+        "y": 888052.0885763309,
+        "z": 382257.534264776
+      },
+      "embBarycentricICRFkm": {
+        "x": -149372975.8284103,
+        "y": 883850.2837667409,
+        "z": 380278.5449125282
+      },
+      "embToEarthICRFkm": {
+        "x": -1579.2267954945564,
+        "y": 4201.804809589987,
+        "z": 1978.9893522477942
+      }
+    },
+    {
+      "isoUtc": "2017-08-21T18:25:00Z",
+      "ttJulianDate": 2457987.268161852,
+      "ttDaysSinceJ2000TT": 6442.268161851913,
+      "deltaTSeconds": 68.84439788472217,
+      "geocentricAstrometricICRFkm": {
+        "sun": {
+          "x": -129218421.24975987,
+          "y": 72252674.36376572,
+          "z": 31322460.610842664
+        },
+        "moon": {
+          "x": -317576.3002785629,
+          "y": 176802.45785468625,
+          "z": 79656.44259253197
+        },
+        "marsBarycenter": {
+          "x": -305571854.253922,
+          "y": 228369017.17426318,
+          "z": 107689786.20607679
+        }
+      },
+      "earthBarycentricICRFkm": {
+        "x": 129592962.19977245,
+        "y": -71501552.86379871,
+        "z": -31019080.63381585
+      },
+      "embBarycentricICRFkm": {
+        "x": 129589103.67976452,
+        "y": -71499404.27262679,
+        "z": -31018112.613382775
+      },
+      "embToEarthICRFkm": {
+        "x": 3858.5200079232454,
+        "y": -2148.5911719202995,
+        "z": -968.020433075726
+      },
+      "topocentricMoonApparentDarEsSalaam": {
+        "altDeg": -45.63269437262067,
+        "azDeg": 280.58519176371453,
+        "distanceKm": 376632.2840430069
+      }
+    },
+    {
+      "isoUtc": "2020-06-21T06:39:00Z",
+      "ttJulianDate": 2459021.777884074,
+      "ttDaysSinceJ2000TT": 7476.777884074021,
+      "deltaTSeconds": 69.43072385437524,
+      "geocentricAstrometricICRFkm": {
+        "sun": {
+          "x": -210422.9118518381,
+          "y": 139496410.81459615,
+          "z": 60471415.1070194
+        },
+        "moon": {
+          "x": -398.5741283833112,
+          "y": 355663.4780817771,
+          "z": 155006.83242705406
+        },
+        "marsBarycenter": {
+          "x": 130750931.70539421,
+          "y": -6743060.720851176,
+          "z": -10138658.84400813
+        }
+      },
+      "earthBarycentricICRFkm": {
+        "x": -569368.2983567597,
+        "y": -138546527.3867117,
+        "z": -60049347.37805894
+      },
+      "embBarycentricICRFkm": {
+        "x": -569372.6964349691,
+        "y": -138542205.86993894,
+        "z": -60047463.9538825
+      },
+      "embToEarthICRFkm": {
+        "x": 4.398078209371306,
+        "y": -4321.51677274704,
+        "z": -1883.424176439643
+      }
+    },
+    {
+      "isoUtc": "2026-09-05T00:00:00Z",
+      "ttJulianDate": 2461288.500800741,
+      "ttDaysSinceJ2000TT": 9743.500800740905,
+      "deltaTSeconds": 69.0879804,
+      "geocentricAstrometricICRFkm": {
+        "sun": {
+          "x": -143543854.9707329,
+          "y": 42546848.13626175,
+          "z": 18444633.683531705
+        },
+        "moon": {
+          "x": 57572.24091137835,
+          "y": 321024.0898758598,
+          "z": 173568.48848314077
+        },
+        "marsBarycenter": {
+          "x": -73287937.23403351,
+          "y": 240566778.16995344,
+          "z": 107376934.02084708
+        }
+      },
+      "earthBarycentricICRFkm": {
+        "x": 143333792.36525816,
+        "y": -43266823.76845379,
+        "z": -18740800.40133931
+      },
+      "embBarycentricICRFkm": {
+        "x": 143334492.01616636,
+        "y": -43262922.747872844,
+        "z": -18738691.274190933
+      },
+      "embToEarthICRFkm": {
+        "x": -699.6509082019329,
+        "y": -3901.020580947399,
+        "z": -2109.1271483786404
+      },
+      "topocentricMoonApparentDarEsSalaam": {
+        "altDeg": 24.099816710751888,
+        "azDeg": 54.68839094630914,
+        "distanceKm": 366802.6787474939
+      }
+    },
+    {
+      "isoUtc": "2028-07-04T00:00:00Z",
+      "ttJulianDate": 2461956.500800741,
+      "ttDaysSinceJ2000TT": 10411.500800740905,
+      "deltaTSeconds": 69.07112832722895,
+      "geocentricAstrometricICRFkm": {
+        "sun": {
+          "x": -32038392.354321517,
+          "y": 136415513.3336419,
+          "z": 59132623.54703592
+        },
+        "moon": {
+          "x": -135520.49272833928,
+          "y": -319713.7210335228,
+          "z": -165144.43905284817
+        },
+        "marsBarycenter": {
+          "x": 73234937.35284044,
+          "y": 317619650.0423609,
+          "z": 139408750.74261737
+        }
+      },
+      "earthBarycentricICRFkm": {
+        "x": 32212953.105850156,
+        "y": -136738167.00392663,
+        "z": -59266589.44977028
+      },
+      "embBarycentricICRFkm": {
+        "x": 32211306.913447224,
+        "y": -136742051.63028026,
+        "z": -59268596.01448717
+      },
+      "embToEarthICRFkm": {
+        "x": 1646.192402932793,
+        "y": 3884.626353621483,
+        "z": 2006.5647168904543
+      }
+    },
+    {
+      "isoUtc": "2030-01-01T00:00:00Z",
+      "ttJulianDate": 2462502.500800741,
+      "ttDaysSinceJ2000TT": 10957.500800740905,
+      "deltaTSeconds": 69.07508062105663,
+      "geocentricAstrometricICRFkm": {
+        "sun": {
+          "x": 26010542.925037507,
+          "y": -132845726.35718876,
+          "z": -57585281.70258
+        },
+        "moon": {
+          "x": -192973.21223060816,
+          "y": -277273.9618355081,
+          "z": -136890.03330183434
+        },
+        "marsBarycenter": {
+          "x": 217279930.47664082,
+          "y": -201897761.57162175,
+          "z": -94415801.68657921
+        }
+      },
+      "earthBarycentricICRFkm": {
+        "x": -25928430.378417075,
+        "y": 132886411.5472,
+        "z": 57609182.70561708
+      },
+      "embBarycentricICRFkm": {
+        "x": -25930775.542751774,
+        "y": 132883042.42563766,
+        "z": 57607519.37806485
+      },
+      "embToEarthICRFkm": {
+        "x": 2345.1643346995115,
+        "y": 3369.121562331915,
+        "z": 1663.327552229166
+      }
+    }
+  ]
+}

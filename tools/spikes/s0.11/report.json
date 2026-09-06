@@ -1,0 +1,160 @@
+{
+  "spike": "S0.11 — CI/testing (Playwright headless WebGL2 smoke, bitwise determinism regression, golden ephemeris)",
+  "date": "2026-09-06",
+  "host": "Windows 11 dev box, Ryzen 7 7445HS, RTX 4050 Laptop 6 GB, 15.2 GB RAM, Node v24.13.0",
+  "toolVersions": {
+    "node": "v24.13.0",
+    "playwright": "1.63.0",
+    "vitest": "5.0.0",
+    "typescript": "7.0.2",
+    "three": "0.185.1",
+    "astronomyEngine": "2.1.19",
+    "rapierDeterministicCompat": "0.20.0",
+    "skyfield": "1.55 (Python 3.14.2)",
+    "jplephem": "2.24",
+    "numpy": "2.4.4"
+  },
+  "runner": {
+    "vitest": "npx vitest run tests tools/spikes/s0.11 — 2 files, 7 tests, all passing (determinism 2 + golden-verify 5)",
+    "playwright": "npx playwright test — 4 tests (webgl2-smoke + three-render-smoke x chromium + firefox), all passing",
+    "typecheck": "npm run typecheck — all S0.11 files clean; one unrelated in-flight error in src/engine/precision.ts (another agent's file, outside S0.11 scope)"
+  },
+  "e2e": {
+    "config": {
+      "file": "playwright.config.ts (repo root)",
+      "projects": ["chromium", "firefox"],
+      "headless": true,
+      "retries": 0,
+      "reporter": "list",
+      "testDir": "tests/e2e",
+      "testMatch": "**/*.pw.ts",
+      "webServer": "node node_modules/vite/bin/vite.js --port 5199 --strictPort --host 127.0.0.1",
+      "webServerNotes": [
+        "spawn 'npx vite' fails on Node 24 (spawn npx.cmd -> EINVAL without shell; measured 2026-09-06) — node invoked directly",
+        "vite dev binds IPv6 ::1 by default on this host — pinned to 127.0.0.1 on both sides",
+        "readiness URL is the fixture page itself: Phase 0 has no root index.html so '/' 404s and Playwright waits out the full timeout"
+      ],
+      "specNaming": "*.pw.ts not *.spec.ts — vitest's default include (**/*.{test,spec}.ts) also globs tests/e2e/*.spec.ts and fails collecting Playwright test() calls (measured 2026-09-06); vitest.config.ts is outside this spike's write scope"
+    },
+    "webgl2Smoke": {
+      "method": "page.evaluate on about:blank: raw WebGL2 context, compile+link GLSL ES 3.00, draw a full-canvas triangle, readPixels 4x4 at centre; thresholds: maxTextureSize/maxRenderbufferSize/maxViewportDim >= 2048, exact shader colour (255,128,64) readback",
+      "chromium": {
+        "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+        "renderer": "WebKit WebGL",
+        "launchArgs": ["--use-angle=swiftshader"],
+        "maxTextureSize": 8192,
+        "maxRenderbufferSize": 8192,
+        "maxViewportDims": [8192, 8192],
+        "maxVertexAttribs": 16,
+        "readbackRgba": [255, 128, 64, 255]
+      },
+      "firefox": {
+        "version": "WebGL 2.0",
+        "renderer": "ANGLE (AMD, Radeon R9 200 Series Direct3D11 vs_5_0 ps_5_0), or similar",
+        "userPrefs": { "webgl.force-enabled": true, "webgl.disabled": false },
+        "maxTextureSize": 16384,
+        "maxRenderbufferSize": 16384,
+        "maxViewportDims": [32767, 32767],
+        "maxVertexAttribs": 16,
+        "readbackRgba": [255, 128, 64, 255]
+      }
+    },
+    "threeRenderSmoke": {
+      "method": "tests/e2e/fixtures/three-render.html served by vite dev (5199), bare 'three' import resolved from pinned node_modules; renderer renders a 2-triangle quad (MeshBasicMaterial 0xff4080), fixture captures readPixels synchronously after render",
+      "chromium": {
+        "threeRevision": "185",
+        "isWebGL2": true,
+        "drawCalls": 1,
+        "triangles": 2,
+        "nonBlackPixels": 16,
+        "readbackRgba": [255, 64, 128, 255]
+      },
+      "firefox": {
+        "threeRevision": "185",
+        "isWebGL2": true,
+        "drawCalls": 1,
+        "triangles": 2,
+        "nonBlackPixels": 16,
+        "readbackRgba": [255, 64, 128, 255]
+      }
+    }
+  },
+  "determinism": {
+    "test": "tests/determinism/determinism.test.ts (vitest, node)",
+    "method": "two in-process runs of the same seeded sim: fresh Rapier world per run, LCG seed 1264010580 (0x4b574554) derives a 6-impulse scripted schedule (ticks 60/157/254/351/448/545), 600 fixed steps dt=1/60, Z-up, gravity (0,0,-9.80665), Rapier defaults, friction 0.7/restitution 0; state stream = 21 snapshots (every 30 steps + final) x 3 bodies x [t,v,q] hashed as sha256 over raw IEEE-754 f64 bit patterns of the solver's f32-promoted values (no float formatting involved); secondary sha256 over JSON.stringify shortest-round-trip text",
+    "scope": "bitwise equality proven same-host, same-engine. Cross-platform (CI matrix) bitwise agreement is NOT measured tonight — [PLACEHOLDER — gate: CI matrix]",
+    "canonicalSha256": "f127593e229cb26f942bade3bf849b8b21f77fed5baa909b3a7215074e2e9f7e",
+    "jsonSha256": "3ef9a0149b19c129e84fb7e5c00563ac62a81c575eaa856d004ab15862deaa74",
+    "hashStableAcrossRuns": "verified identical over 3 consecutive vitest invocations",
+    "finalStates": {
+      "padBox": {
+        "translation": [-0.0025171758607029915, 0.001900645554997027, 0.49993079900741577],
+        "linvel": [0, 0, 0],
+        "rotation": [8.976931198390048e-9, 2.3546933292095673e-8, 6.577952071928905e-10, 1]
+      },
+      "rampBox": {
+        "translation": [3.194192886352539, 0.0000818338812678121, 0.9243544340133667],
+        "linvel": [0, 0, 0],
+        "rotation": [7.479783015185149e-9, 0.13054387271404266, -9.989448157554648e-10, 0.9914425015449524]
+      },
+      "hanging": {
+        "translation": [0, 0, 1.5],
+        "linvel": [0, 0, 0],
+        "rotation": [0, 0, 0, 1]
+      }
+    }
+  },
+  "goldenEphemeris": {
+    "generator": "python tools/oracle/generate_golden.py",
+    "fixture": "tests/golden/ephemeris/ephemeris-golden.json (schema kwetu.golden.ephemeris/1, 8 rows)",
+    "kernel": {
+      "file": "de440s.bsp",
+      "sha256": "c1c7feeab882263fc493a9d5a5b2ddd71b54826cdf65d8d17a76126b260a49f2",
+      "bytes": 32726016,
+      "sourceUrl": "https://ssd.jpl.nasa.gov/ftp/eph/planets/bsp/de440s.bsp",
+      "sourceVerified": "HTTP 200, Content-Length 32726016 (matches local file), Last-Modified 2020-12-22, checked 2026-09-06",
+      "targets": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 199, 299, 301, 399],
+      "note": "no Mars center (499) in de440s — the Mars row uses the Mars system barycenter (4)"
+    },
+    "conventions": {
+      "frame": "ICRF axes exactly as tabulated in de440s.bsp; astronomy-engine side is EQJ (J2000 mean equator) — ICRS<->EQJ frame bias ~0.02 arcsec is inside every residual quoted [derived]",
+      "geocentric": "astrometric: origin Earth geocenter (399), light-time corrected, no aberration/deflection — skyfield earth.at(t).observe(body).position.km vs astronomy-engine GeoVector(body, t, aberration=false) x 149597870.7",
+      "time": "geocentric rows evaluated at the IDENTICAL TT instant (fixture ttDaysSinceJ2000TT -> AstroTime.FromTerrestrialTime); topocentric rows evaluated at the same civil UTC instant in both libraries",
+      "topocentric": "WGS84 lat/lon Dar es Salaam (-6.79, +39.21, h=0), apparent alt/az, no refraction, azimuth clockwise from north"
+    },
+    "residuals": {
+      "maxGeocentricArcmin": 0.3453653444366864,
+      "maxGeocentricArcminAt": "2017-08-21T18:25:00Z moon",
+      "perBodyMaxArcmin": {
+        "sun": 0.02157828896397943,
+        "moon": 0.3453653444366864,
+        "marsBarycenter": 0.04139471370025999
+      },
+      "maxMoonLinearKm": 46.3205680219164,
+      "maxSunLinearKm": 2170.011474451732,
+      "maxMarsLinearKm": 5067.593356210548,
+      "maxEmbEarthLinearKm": 0.166721020714018,
+      "maxTopocentricArcmin": 0.09282324572342045,
+      "maxTopocentricArcminAt": "2017-08-21T18:25:00Z",
+      "deltaTModelMaxDisagreementSeconds": 6.3801476411489375,
+      "deltaTDecomposition": "astronomy-engine evaluates positions from a civil Date at TT = UTC + ~75.5 s (Espenak-Meeus 2004 polynomial) vs skyfield builtin ~69.1 s at 2026 — a ~6.3 s TT mismatch (~0.06 arcmin at lunar distance [derived]); Earth rotation: astronomy-engine's era() uses the civil instant as UT1, skyfield's builtin UT1-UTC = +0.096 s at 2026-09-05 = 1.44 arcsec [MEASURED 2026-09-06, GAST comparison]"
+    },
+    "thresholds": {
+      "geocentricArcmin": 0.5,
+      "moonLinearKm": 120,
+      "embEarthLinearKm": 1.0,
+      "topocentricArcmin": 0.25,
+      "rationale": "regression pins inside the B-CONST-06 ~1 arcmin class with headroom over the measured maxima; the Moon linear pin (120 km) is the 1-arcmin subtension at the Moon's mean distance"
+    }
+  },
+  "budgetRows": {
+    "B-EPH-01": {
+      "value": "astronomy-engine 2.1.19 vs skyfield 1.55/de440s.bsp (8 dates 1990-2030, 3 geocentric bodies + 2 topocentric alt/az): max angular residual 0.345 arcmin (Moon, 2017-08-21); max linear at lunar distance 46.3 km; Sun max 0.0216 arcmin, Mars(barycenter) max 0.0414 arcmin; EMB<->Earth bookkeeping offset max 0.17 km; topocentric Moon alt/az (Dar es Salaam) max 0.093 arcmin",
+      "tag": "[MEASURED 2026-09-06, tools/spikes/s0.11/report.json + tests/golden/ephemeris/ephemeris-golden.json, regen: python tools/oracle/generate_golden.py + npx vitest run tools/spikes/s0.11; ADR-011]"
+    },
+    "B-EPH-02": {
+      "value": "bitwise PASS same-host/same-engine: 600-step seeded Rapier sim state-stream sha256 f127593e229cb26f942bade3bf849b8b21f77fed5baa909b3a7215074e2e9f7e (f64-bit-pattern hashing, no float formatting); cross-platform CI matrix pending",
+      "tag": "[MEASURED 2026-09-06, tests/determinism/determinism.test.ts, regen: npx vitest run tests/determinism; cross-platform half PLACEHOLDER — gate: CI matrix; ADR-011]"
+    }
+  }
+}
