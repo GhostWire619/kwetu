@@ -53,3 +53,18 @@ checks them.
   (2) Phase-1 Part A workflow — engine math core (src/engine) + infra compose verified
   + GLO-30 terrain bake, (3) planetiler Dar+Zanzibar PMTiles bake (first attempt failed:
   OMT profile needs --download for aux sources — relaunched)
+- (later) planetiler bake done: dar-zanzibar.pmtiles 63,203,540 B, bounds
+  38.95,-7.05,39.6,-5.75, maxzoom 15 [MEASURED, 20 min 43 s wall]; STR-OMT credit
+  obligation recorded in ATTRIBUTIONS.md
+- (later) terrain bake done: stone-town.terrain.glb from GLO-30 via geotiff+delatin,
+  433×361 grid, sea clamp <0 → 0, maxError 1.5 m [MEASURED, 3.6 s]
+- (later) Part A landed and verified: engine math core moved to client/src/engine
+  (f64 vec3, WGS84 geodesy, frame chain, LocalScene rebase + one Rapier bubble);
+  141 tests green across 10 files; typecheck clean; ledger PASS 0 violations;
+  infra stack verified live headlessly (postgres 16.8, nakama 3.37.0, caddy 2.11.4
+  local-CA HTTPS, livekit 1.13.6; device-auth JWT through proxy + WSS upgrade OK).
+  Committed 57be54a, pushed.
+- (late) groundwork workflow launched: walk KCC + vehicle controller + f64 Kepler
+  orbits — three renderer-independent modules in parallel (adversarial verify +
+  fix rounds), write paths disjoint from the still-running Phase-0 spike workflow.
+  Renderer (Part B) waits on the S0.2 outcome per night plan.

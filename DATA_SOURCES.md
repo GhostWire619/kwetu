@@ -139,6 +139,27 @@ A player standing in Stone Town must download megabytes, not a whole-country
 archive. The per-region payload budget is owned by `ROADMAP.md` §Budgets
 (`B-REG-02`) — no size is set here; the region manifest defines the split.
 
+**Build record — first regional bake [MEASURED 2026-09-06].**
+
+- Script: `tools/bake/basemap.ps1` (`npm run bake:basemap`); planetiler image
+  digest pinned in `THIRD_PARTY_ASSETS.md` (code-08).
+- Input: Geofabrik `tanzania-latest.osm.pbf`, downloaded 2026-09-06, 673 MB
+  (the extract's own replication timestamp is not yet recorded — record it at
+  the next refresh per the reproducibility rule).
+- Profile: planetiler's default **OpenMapTiles** profile (aux sources fetched
+  with `--download`) — *not* the Protomaps basemap profile named above.
+  Consequences recorded: the OMT tile schema carries the visible-credit
+  obligation `© OpenMapTiles` (STR-OMT, `ATTRIBUTIONS.md`). The Protomaps
+  profile decision is reopened by this bake's evidence — OMT gives MapLibre
+  style-schema compatibility out of the box; the final profile call lands with
+  the Phase-2 row revision, and any profile switch bumps the artifact row
+  version and swaps the style JSON.
+- Output: `.bake/pmtiles/dar-zanzibar.pmtiles` — 63,203,540 B, bounds
+  38.95,-7.05,39.6,-5.75, maxzoom 15; wall time 20 min 43 s on the dev box
+  (4c/8t, `-Xmx5g`).
+- Location: `.bake/` is gitignored by design; the artifact is regenerable by
+  the pinned script and is published per `data/README.md` when distributed.
+
 ## Earth elevation
 
 **Primary source: Copernicus DEM GLO-30.**
@@ -169,6 +190,22 @@ archive. The per-region payload budget is owned by `ROADMAP.md` §Budgets
 - Sources: Copernicus Data Space Ecosystem (`https://spacedata.copernicus.eu`);
   AWS Open Data mirror `s3://copernicus-dem-30m`
   (`https://registry.opendata.aws/copernicus-dem/`).
+
+**Build record — first terrain bake [MEASURED 2026-09-06].**
+
+- Script: `tools/bake/terrain.mjs` (`npm run bake:terrain`).
+- Input: 2× Copernicus GLO-30 tiles (S06/E039 + S07/E039, covering the
+  Stone Town bake extent), fetched 2026-09-06 from the AWS Open Data mirror.
+- Pipeline: geotiff → delatin mesh; sea rule applied at bake time (all cells
+  < 0 m clamped to 0 — the no-ocean-tiles rule above); maxError 1.5 m.
+- Output: `.bake/meshes/stone-town.terrain.glb`, 433×361 grid, plus a bake
+  manifest. Wall time 3.6 s.
+- **Known gap, honestly:** the mandatory DSM mitigation (WBM water filtering +
+  footprint flattening around OSM buildings/roads) is NOT yet in this
+  pipeline — Stone Town rooftops are baked into the current mesh. Tracked for
+  the Phase-2 pipeline revision; until then the mesh is fit for
+  renderer-mechanics testing, not for final terrain.
+- Gitignored; regenerable by the pinned script.
 
 **Cross-checks and fallbacks.**
 

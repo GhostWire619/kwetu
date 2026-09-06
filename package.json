@@ -8,7 +8,11 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "check:ledger": "node tools/ledger/check.mjs"
+    "test:e2e": "playwright test",
+    "check:ledger": "node tools/ledger/check.mjs",
+    "bake:terrain": "node tools/bake/terrain.mjs",
+    "bake:basemap": "pwsh -NoProfile -File tools/bake/basemap.ps1",
+    "golden-test": "python tools/oracle/generate_golden.py"
   },
   "dependencies": {
     "@dimforge/rapier3d-deterministic-compat": "0.20.0",

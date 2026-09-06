@@ -53,10 +53,11 @@ App dev/build commands fill in at Phase 1 — do not invent scripts or flags bey
 | `typecheck` | Strict TypeScript compile check (`tsc --noEmit`) |
 | `test` | Run the vitest suites |
 | `check:ledger` | Enforce the attribution ledger gate (tools/ledger/check.mjs) |
-| `dev` | *(placeholder — fills in at Phase 1)* |
-| `build` | *(placeholder — fills in at Phase 1)* |
-| `bake` | *(placeholder — regenerates `data/` artifacts; fills in at Phase 1)* |
-| `golden-test` | *(placeholder — regenerates golden baselines; fills in at Phase 1)* |
+| `test:e2e` | Run the Playwright suites (Chromium + Firefox) |
+| `bake:terrain` | Regenerate terrain meshes from Copernicus GLO-30 (tools/bake/terrain.mjs) |
+| `bake:basemap` | Regenerate region PMTiles via planetiler (tools/bake/basemap.ps1, needs Docker) |
+| `golden-test` | Regenerate the golden ephemeris baselines (tools/oracle/generate_golden.py, needs the DE440s kernel) |
+| `dev` / `build` | *(placeholder — wire with the Phase-1 client entry)* |
 
 ## Repo layout
 
