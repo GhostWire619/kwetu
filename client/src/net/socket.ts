@@ -56,9 +56,9 @@
  * single source of truth; the Go side is test-verified against the same
  * file). Re-exported here so this module's public API is unchanged.
  */
-import { MatchOpcode, WIRE_MAX_BYTES, INPUT_SEND_HZ, INPUT_SEND_PERIOD_MS } from '../../shared/protocol';
+import { MatchOpcode, WIRE_MAX_BYTES, INPUT_SEND_HZ, INPUT_SEND_PERIOD_MS } from '../../../shared/protocol.ts';
 export { MatchOpcode, WIRE_MAX_BYTES, INPUT_SEND_HZ, INPUT_SEND_PERIOD_MS };
-export type { MatchOpcodeValue } from '../../shared/protocol';
+export type { MatchOpcodeValue } from '../../../shared/protocol.ts';
 
 /** Reconnect backoff defaults. [PLACEHOLDER — gate: Phase 5 tunes against real East-African links] */
 export const RECONNECT_BASE_DELAY_MS = 250;
