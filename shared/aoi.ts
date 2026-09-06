@@ -1,6 +1,8 @@
 /**
- * S0.8 — AoI cell grid (THROWAWAY spike implementation under the CLAUDE.md
- * tools/spikes/ carve-out). This file is ALSO the algorithm spec for the
+ * S0.8 — AoI cell grid (re-homed 2026-09-06 from the throwaway spike
+ * tools/spikes/s0.8/ so the normative algorithm spec lives in the production
+ * tree; shared/protocol.json pins the ADR-009 grid parameters). This file is
+ * the algorithm spec for the
  * Phase-5 Go port of the region-match interest manager (ARCHITECTURE.md §6,
  * NETWORKING.md §5/§9): the Go port must reproduce THIS algorithm step for
  * step. Zero dependencies; pure f64 arithmetic; no I/O; no clocks.

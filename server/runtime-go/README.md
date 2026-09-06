@@ -7,7 +7,7 @@ authoritative region match handler `kwetu_world`. Contracts implemented here:
   replay with clamped client claims, trapezoidal step speed, drift thresholds.
   NO server-side physics, no contact solver, no "server-authoritative physics"
   (NETWORKING.md §6 wording is binding).
-- **ADR-009** (S0.8): the AoI cell grid — `tools/spikes/s0.8/aoi.ts` is the
+- **ADR-009** (S0.8): the AoI cell grid — `shared/aoi.ts` (re-homed 2026-09-06 from the spike; ADR-009 Decision 3) is the
   normative algorithm spec (Decision 3); `aoi.go` reproduces it step for step,
   with 250 m cells / 500 m radius (Decision 1).
 - **ADR-008** (S0.7): the server hands out UTC + a monotonic reading only —

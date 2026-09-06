@@ -1,7 +1,7 @@
 // Kwetu — AoI port parity tests.
 //
 // These are the Go-side reproduction of the 12 probe tests that pin the
-// normative spec tools/spikes/s0.8/aoi.test.ts (ADR-009 Decision 3: the port
+// normative spec tests/shared/aoi.test.ts (re-homed from the spike 2026-09-06) (ADR-009 Decision 3: the port
 // must reproduce the algorithm step for step), plus the three benchmark-
 // shape population-parity tests: the port must produce the SAME measured
 // populations as the TS bench (max cell population / max interest-set size)
@@ -517,7 +517,7 @@ func TestBenchmarkShapeSmoke(t *testing.T) {
 //
 // The three ADR-009 headline configs, reproduced against the committed TS
 // spec + bench placement. Expected values extracted from a live run of
-// tools/spikes/s0.8/aoi.ts (Node 24.13.0, 2026-09-06, fully seeded) and
+// shared/aoi.ts (Node 24.13.0, 2026-09-06, fully seeded) and
 // equal to the ADR-009 evidence table / report.json rows:
 //
 //	N5000 cs250 uniform   -> max cell pop 23,   max interest set 334

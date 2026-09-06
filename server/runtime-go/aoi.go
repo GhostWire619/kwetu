@@ -1,6 +1,6 @@
 // Kwetu — AoI cell grid (Go port of the normative spike spec).
 //
-// This is the Phase-5 Go runtime port of tools/spikes/s0.8/aoi.ts, which
+// This is the Phase-5 Go runtime port of shared/aoi.ts, which
 // ADR-009 Decision 3 declares the NORMATIVE ALGORITHM SPEC: the port must
 // reproduce it step for step. The mapping from the TS spec is:
 //

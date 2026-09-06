@@ -195,6 +195,7 @@ func envLookup(ctx context.Context, key string) string {
 // the assertions read the same payload shape a client library would parse.
 func jsonUnmarshalStrict(s string, v interface{}) error {
 	dec := json.NewDecoder(strings.NewReader(s))
+	dec.DisallowUnknownFields()
 	if err := dec.Decode(v); err != nil {
 		return err
 	}

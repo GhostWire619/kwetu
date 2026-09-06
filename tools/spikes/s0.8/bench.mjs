@@ -13,7 +13,7 @@ import { performance } from 'node:perf_hooks';
 import { writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { AoiGrid } from './aoi.ts';
+import { AoiGrid } from '../../../shared/aoi.ts';
 
 const DATE = '2026-09-06';
 

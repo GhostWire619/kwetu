@@ -6,7 +6,10 @@
  * membership invariants), not implementation details.
  */
 import { describe, it, expect } from 'vitest';
-import { AoiGrid, cellKey, cellCoordOf } from './aoi.ts';
+// aoi.ts was re-homed 2026-09-06 to shared/aoi.ts (ADR-009's normative spec
+// lives outside the throwaway spike carve-out; the probe tests moved with it
+// in substance — this spike copy imports the new home).
+import { AoiGrid, cellKey, cellCoordOf } from '../../shared/aoi.ts';
 
 /** Small deterministic LCG (mulberry32) — same generator family as bench.mjs. */
 function mulberry32(seed: number): () => number {

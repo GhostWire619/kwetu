@@ -15,15 +15,13 @@
  *   client (NETWORKING.md §12 — expect to read its source) is adapted behind
  *   the same seam by `createNakamaTransport`, which imports it lazily so no
  *   test or non-network build ever loads it.
- * - The opcode table, homed here until `shared/` exists. The Go runtime
- *   mirrors the numbering today with its own constants — OpClientState=1 /
- *   OpServerSnapshot=2 / OpServerCorrection=3 in
- *   server/runtime-go/snapshot.go [MEASURED 2026-09-06, snapshot.go source]
- *   — but the two tables are textually independent and no owning doc
- *   records the mirroring guarantee yet: a Go-side renumber is a silent
- *   protocol break. Phase 5 must re-home the table into `shared/` so one
- *   definition serves both sides; until then the two constant blocks must
- *   be diffed against each other at every review of either.
+ * - The opcode table was re-homed (2026-09-06, Phase 5) to `shared/` — the
+ *   single source of truth is `shared/protocol.json`; this module re-exports
+ *   the typed view (`shared/protocol.ts`) so existing importers keep
+ *   working. The Go runtime's compiled constants are verified against the
+ *   same JSON at `go test` time (server/runtime-go/protocol_check_test.go,
+ *   server/runtime-go/README.md §Build): a one-sided renumber now fails a
+ *   test instead of shipping as a silent protocol break.
  *
  * Hard rules enforced here
  * ------------------------
@@ -53,33 +51,14 @@
  */
 
 /**
- * Wire-format opcodes. Frozen: this object IS the client-side protocol
- * table until `shared/` exists. Values are stable contract numbers — the
- * Go match handler (Phase 5) must mirror them exactly.
+ * The protocol table lives in `shared/` (one definition for the TS client
+ * and the Go runtime — shared/protocol.ts reads shared/protocol.json, the
+ * single source of truth; the Go side is test-verified against the same
+ * file). Re-exported here so this module's public API is unchanged.
  */
-export const MatchOpcode = Object.freeze({
-  /** C2S: one coalesced per-tick input message (NETWORKING.md §4 rule 2). */
-  INPUT: 1,
-  /** S2C: per-tick world snapshot for client interpolation (NETWORKING.md §7). */
-  SNAPSHOT: 2,
-  /** S2C: server-sanctioned kinematic discontinuity — teleport, lift, impact (ADR-007 Open item 3). */
-  DISCONTINUITY: 3,
-} as const);
-export type MatchOpcodeValue = (typeof MatchOpcode)[keyof typeof MatchOpcode];
-
-/**
- * The 1500-byte wire cap. CLAUDE.md hard invariant — quoted here, never
- * moved, never tuned.
- */
-export const WIRE_MAX_BYTES = 1500;
-
-/**
- * Input send rate. 20 Hz per this module's brief; the authoritative number
- * is a ROADMAP §Budgets row [PLACEHOLDER — gate: Phase 5 ratifies].
- */
-export const INPUT_SEND_HZ = 20;
-/** Derived from INPUT_SEND_HZ: the coalescing window in ms. */
-export const INPUT_SEND_PERIOD_MS = 1000 / INPUT_SEND_HZ;
+import { MatchOpcode, WIRE_MAX_BYTES, INPUT_SEND_HZ, INPUT_SEND_PERIOD_MS } from '../../shared/protocol';
+export { MatchOpcode, WIRE_MAX_BYTES, INPUT_SEND_HZ, INPUT_SEND_PERIOD_MS };
+export type { MatchOpcodeValue } from '../../shared/protocol';
 
 /** Reconnect backoff defaults. [PLACEHOLDER — gate: Phase 5 tunes against real East-African links] */
 export const RECONNECT_BASE_DELAY_MS = 250;

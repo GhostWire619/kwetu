@@ -1,0 +1,63 @@
+{
+  "schema": "kwetu.protocol-golden/0.1",
+  "frames": {
+    "clientState": {
+      "hex": "d20400000000c03f00001040000070c0f304353f00002040",
+      "request": {
+        "Tick": 1234,
+        "Pos": [
+          1.5,
+          2.25,
+          -3.75
+        ],
+        "Yaw": 0.7071067811865476,
+        "Speed": 2.5
+      }
+    },
+    "snapshot": {
+      "hex": "2e160000020000000000000000000100000000002841000010c06400ceff004001020700030002000000000000be004096430180ff7fffff000000000000",
+      "request": {
+        "tick": 5678,
+        "records": [
+          {
+            "ID": 1,
+            "X": 10.5,
+            "Z": -2.25,
+            "VelX": 100,
+            "VelZ": -50,
+            "Heading": 16384,
+            "FrameID": 1,
+            "MovementRegime": 2,
+            "ModelRevision": 7,
+            "StateFlags": 3
+          },
+          {
+            "ID": 2,
+            "X": -0.125,
+            "Z": 300.5,
+            "VelX": -32767,
+            "VelZ": 32767,
+            "Heading": 65535,
+            "FrameID": 0,
+            "MovementRegime": 0,
+            "ModelRevision": 0,
+            "StateFlags": 0
+          }
+        ]
+      }
+    },
+    "correction": {
+      "hex": "09000000cdcccc3dcdcc4c3e9a99993e0000c0bf00000000",
+      "request": {
+        "Tick": 9,
+        "Pos": [
+          0.1,
+          0.2,
+          0.3
+        ],
+        "Yaw": -1.5,
+        "Speed": 0
+      }
+    }
+  }
+}

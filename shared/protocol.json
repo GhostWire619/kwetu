@@ -1,0 +1,34 @@
+{
+  "$comment": "Kwetu wire protocol — the SINGLE source of truth for the constants both implementations mirror. client/src/net/socket.ts and client/src/play/surfaceNet.ts read the typed view in shared/protocol.ts (JSON import); server/runtime-go/protocol_check_test.go asserts its compiled constants against this file at `go test` time (README.md §Build). Changing a value here without changing both sides is a protocol break, and one of the two mirror tests fails.",
+  "schema": "kwetu.protocol/0.1",
+  "matchName": "kwetu_world",
+  "opcodes": {
+    "clientState": 1,
+    "serverSnapshot": 2,
+    "serverCorrection": 3
+  },
+  "wireMaxBytes": 1500,
+  "inputSendHz": 20,
+  "tickRateHz": 20,
+  "clientState": {
+    "bytes": 24,
+    "layout": "tick u32 LE + pos 3xf32 LE + yaw f32 LE + speed f32 LE"
+  },
+  "snapshot": {
+    "envelopeBytes": 14,
+    "recordBytes": 24,
+    "wireMarginBytes": 128,
+    "layout": "envelope: tick u32 LE + entityCount u16 LE + flags u16 LE + reserved u8x6; record: id u32 LE + x f32 LE + z f32 LE + velX i16 LE + velZ i16 LE + heading u16 LE (1/65536 turns) + frameId u8 + movementRegime u8 + modelRevision u16 LE + stateFlags u16 LE"
+  },
+  "aoi": {
+    "cellSizeMetres": 250.0,
+    "radiusMetres": 500.0,
+    "provenance": "cellSize [MEASURED 2026-09-06, ADR-009 B-AOI-01]; radius [PLACEHOLDER - gate: Phase 3/5 production radius, ADR-009]"
+  },
+  "rpcs": {
+    "healthcheck": "healthcheck_rpc",
+    "worldTime": "world_time_rpc",
+    "worldJoin": "world_join_rpc",
+    "voiceToken": "voice_token_rpc"
+  }
+}

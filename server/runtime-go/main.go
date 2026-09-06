@@ -14,10 +14,12 @@ import (
 	"github.com/heroiclabs/nakama-common/runtime"
 )
 
-// RPC ids (client-visible; stable contract surface).
+// RPC ids (client-visible; stable contract surface). The mirror check
+// (protocol_check_test.go) holds these equal to shared/protocol.json.
 const (
 	RpcHealthcheck = "healthcheck_rpc"
 	RpcWorldTime   = "world_time_rpc"
+	RpcWorldJoin   = "world_join_rpc"
 	RpcVoiceToken  = "voice_token_rpc"
 )
 
@@ -29,6 +31,9 @@ func InitModule(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runti
 	if err := initializer.RegisterRpc(RpcWorldTime, rpcWorldTime); err != nil {
 		return err
 	}
+	if err := initializer.RegisterRpc(RpcWorldJoin, rpcWorldJoin); err != nil {
+		return err
+	}
 	if err := initializer.RegisterRpc(RpcVoiceToken, rpcVoiceToken); err != nil {
 		return err
 	}
@@ -36,8 +41,8 @@ func InitModule(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runti
 		return err
 	}
 
-	logger.Info("kwetu runtime module %s loaded: rpcs(%s, %s, %s) + match(%s, %d Hz, AoI %.0f m cells / %.0f m radius)",
-		moduleVersion, RpcHealthcheck, RpcWorldTime, RpcVoiceToken, MatchName, matchTickRate, aoiCellSizeM, aoiRadiusM)
+	logger.Info("kwetu runtime module %s loaded: rpcs(%s, %s, %s, %s) + match(%s, %d Hz, AoI %.0f m cells / %.0f m radius)",
+		moduleVersion, RpcHealthcheck, RpcWorldTime, RpcWorldJoin, RpcVoiceToken, MatchName, matchTickRate, aoiCellSizeM, aoiRadiusM)
 	return nil
 }
 
