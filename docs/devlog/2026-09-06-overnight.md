@@ -118,3 +118,23 @@ checks them.
   .so gitignored. Phase-5 remaining: match-create surface (no nk.MatchCreate wrapper
   exists), session wiring (serverKey, setSessionToken), two-browser e2e, aoi.ts/opcode
   re-homing into shared/ (task #35).
+
+## 08:45 — Phase-1 Part B landed: the game runs
+- **5706f57**: client bootstrap + renderer shell + camera rig + fly e2e. Real-scale Earth
+  with Sun/Moon at real ephemeris positions (full Helio->Pci->PlanetFixed chain, TT-now);
+  f64 canonical, f32 only at upload; log depth + floating origin both on; no Rapier in
+  the shell. fly.pw.ts drives 11 log-spaced stops 1 m → 1e10 m through the real f64
+  integration path in Chromium + Firefox — the Phase-1 exit criterion's automated
+  portion; the human browser check remains the gate (SwiftShader ≠ fps evidence).
+  Adversarial review caught two degenerate assertions (jitter check never ticked the
+  world; flight never positively asserted) — fixed with world-ticked jitter + GPU
+  pixel-delta signals ([MEASURED] altitude-banded baselines, tools/measure/
+  gpu-stability.mjs) and integration-only stop assertions. B-LOAD-09 built shell
+  597,993 B raw / 158,799 B gzip-9, Rapier-free [MEASURED]; first-visit total
+  1,665,025 → 861,881 B provisional. dev/build wired (CLAUDE.md command table updated).
+- Phase-1 exit criterion: automated portion green (typecheck 0, e2e 6/6, vitest 451 —
+  6 orbits reds are the groundwork workflow's in-flight files, 1 s0.2 thrash deferred).
+  Awaiting the human browser check (Chrome + Firefox, 1 m → 1e10 m, no jitter, no
+  z-fighting, shell-transfer recorded).
+- Remaining in flight: groundwork workflow (walk/vehicle/orbits — 6 orbits reds are its
+  live fix rounds). Next after it lands: Night D Earth-data streaming into this shell.
