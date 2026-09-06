@@ -1,0 +1,128 @@
+{
+  "schema": "kwetu.golden.kepler/1",
+  "generatedUtc": "2026-09-06T06:31:50+00:00",
+  "generator": "tools/oracle/generate_kepler.py",
+  "method": {
+    "pair": "Earth geocenter (399) minus Sun proper (10), geometric same-instant kernel difference, ICRF axes, metres; velocity by prescribed central difference over +/-300 s; v0mFivePoint/v1mFivePoint record the 5-point stencil over the same h (the differencing-model check reference: |v_central - v_five_point| = (h^2/6) r'''(xi), kernel-positions only); v0mKernelAnalytic/v1mKernelAnalytic record the kernel's own Chebyshev-differentiated velocity (diagnostics, not the row contract, NOT usable for the differencing-model check \u2014 Chebyshev-fit-derivative error class 2.5e-6..4.8e-6 m/s); jerkEstimateMPerS3 is the +/-600 s third-central-difference magnitude of the pair at t0",
+    "time": "skyfield load.timescale(builtin=True); dtSeconds = 600 s is exact in TT (no leap second inside either window; TT-UTC piecewise constant) [derived]",
+    "frame": "ICRF in, ICRF out \u2014 the Kepler propagator under test is frame-agnostic; ICRF<->EQJ frame bias is a rocket-phase follow-up, deliberately not folded in",
+    "expectedResidual": "two-body GM_SUN propagation of (r0m, v0m) misses r1m by (h^2/6)*r'''*dt (velocity differencing, ~0.013 m here) plus the two-body-vs-N-body model gap (<= 0.5*perturbationAccelMPerS2*dt^2, ~6 m class, Moon-dominated) [derived \u2014 the test derives its bound from jerkEstimateMPerS3 and perturbationAccelMPerS2 and reports the measured residual]"
+  },
+  "oracle": {
+    "library": "skyfield",
+    "skyfieldVersion": "1.55",
+    "pythonVersion": "3.14.2",
+    "kernel": {
+      "file": "de440s.bsp",
+      "sha256": "c1c7feeab882263fc493a9d5a5b2ddd71b54826cdf65d8d17a76126b260a49f2",
+      "bytes": 32726016,
+      "sourceUrl": "https://ssd.jpl.nasa.gov/ftp/eph/planets/bsp/de440s.bsp",
+      "dateRange": "1849-2150 [EXTERNAL \u2014 JPL DE440/DE440s release notes]"
+    },
+    "regenerateCommand": "python tools/oracle/generate_kepler.py"
+  },
+  "rows": [
+    {
+      "t0Iso": "2026-09-05T00:00:00Z",
+      "t1Iso": "2026-09-05T00:10:00Z",
+      "t0TtWhole": 2461288.0,
+      "t0TtFraction": 0.5008007407407408,
+      "t1TtWhole": 2461288.0,
+      "t1TtFraction": 0.5077451851851852,
+      "dtSeconds": 600.0,
+      "r0m": {
+        "x": 143543849609.69547,
+        "y": -42546850037.36329,
+        "z": -18444634385.367607
+      },
+      "v0m": {
+        "x": 8686.329876556396,
+        "y": 25903.755973599753,
+        "z": 11229.2329616038
+      },
+      "r1m": {
+        "x": 143549060409.6525,
+        "y": -42531307482.10243,
+        "z": -18437896714.208733
+      },
+      "v1m": {
+        "x": 8683.003270009358,
+        "y": 25904.761475372314,
+        "z": 11229.67086315155
+      },
+      "v0mFivePoint": {
+        "x": 8686.329883804321,
+        "y": 25903.75598813163,
+        "z": 11229.23296795845
+      },
+      "v1mFivePoint": {
+        "x": 8683.003277223375,
+        "y": 25904.761489916906,
+        "z": 11229.67086950726
+      },
+      "v0mKernelAnalytic": {
+        "x": 8686.329885184356,
+        "y": 25903.75599232723,
+        "z": 11229.232969772858
+      },
+      "v1mKernelAnalytic": {
+        "x": 8683.003278691607,
+        "y": 25904.761494098246,
+        "z": 11229.670871328
+      },
+      "jerkEstimateMPerS3": 1.1631431977362171e-09,
+      "perturbationAccelMPerS2": 3.585715443344704e-05
+    },
+    {
+      "t0Iso": "2009-03-20T11:44:00Z",
+      "t1Iso": "2009-03-20T11:54:00Z",
+      "t0TtWhole": 2454910.0,
+      "t0TtFraction": 0.9896549074074074,
+      "t1TtWhole": 2454910.0,
+      "t1TtFraction": 0.9965993518518518,
+      "dtSeconds": 600.0,
+      "r0m": {
+        "x": -148994122340.04364,
+        "y": 301872209.64988226,
+        "z": 131514376.3369421
+      },
+      "v0m": {
+        "x": -561.7076001485188,
+        "y": -27436.420315288306,
+        "z": -11895.57563293549
+      },
+      "r1m": {
+        "x": -148994458286.75015,
+        "y": 285410350.68665993,
+        "z": 124377027.84727965
+      },
+      "v1m": {
+        "x": -558.114751993815,
+        "y": -27436.44279485027,
+        "z": -11895.585955061888
+      },
+      "v0mFivePoint": {
+        "x": -561.7076006486681,
+        "y": -27436.42033205731,
+        "z": -11895.575640305215
+      },
+      "v1mFivePoint": {
+        "x": -558.1147524515787,
+        "y": -27436.44281161999,
+        "z": -11895.585962431158
+      },
+      "v0mKernelAnalytic": {
+        "x": -561.7076005549869,
+        "y": -27436.420329798257,
+        "z": -11895.575639323964
+      },
+      "v1mKernelAnalytic": {
+        "x": -558.1147524776511,
+        "y": -27436.44280936125,
+        "z": -11895.585961454442
+      },
+      "jerkEstimateMPerS3": 1.2215747855730427e-09,
+      "perturbationAccelMPerS2": 3.0047613722066523e-05
+    }
+  ]
+}
