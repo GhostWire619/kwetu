@@ -101,3 +101,20 @@ checks them.
 - Night B workflow complete (S0.2 blocked by agent stalls → PARTIAL, all other spikes
   landed). Remaining in flight: groundwork (walk/vehicle/orbits), multiplayer/voice,
   Part B renderer — the game-running critical path.
+
+## 08:10 — multiplayer/voice groundwork landed
+- **541debd**: Night F workflow (5 agents, 651 tool calls) landed through the central
+  gate. Go runtime: AoI port reproduces all three ADR-009 parity rows exactly; validator
+  replays the recorded S0.6 sessions bitwise to B-VAL-01/B-VAL-02; 42/42 Go tests;
+  deployed live (module + 3 RPCs + kwetu_world match registered). The crash-loop root
+  cause is recorded in server/runtime-go/README.md: golang:1.24-alpine cannot load into
+  nakama 3.37.0 (go1.25.5 host) AND -trimpath is mandatory — both failure modes measured.
+  Client net/voice: 85/85 tests; the verify round caught the SDK spatial path producing
+  NO audio without Track.attach() (fixed + regression-tested). Central fixes on landing:
+  one-report-per-tick wire budget enforced in MatchLoop (was doc-only), cooldown made
+  tick-based, stale ClientStateBytes comment (20→24), unset-env RPC test made
+  deterministic. Infra: LIVEKIT_* wired into nakama; Caddy /livekit TLS signaling route;
+  voice_token_rpc mints live (verified end-to-end: 3-segment JWT + reachable host);
+  .so gitignored. Phase-5 remaining: match-create surface (no nk.MatchCreate wrapper
+  exists), session wiring (serverKey, setSessionToken), two-browser e2e, aoi.ts/opcode
+  re-homing into shared/ (task #35).
