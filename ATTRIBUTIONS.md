@@ -74,6 +74,19 @@ labels around* the strings are translated (§Screen labels).
   contexts (DATA_SOURCES.md); the string enters the CI-generated table when
   the Natural Earth dataset row lands.
 
+<a id="openmaptiles"></a>
+
+### STR-OMT — OpenMapTiles (vector-tile schema credit)
+
+- String (verbatim): `© OpenMapTiles`
+- Link: https://github.com/openmaptiles/openmaptiles [EXTERNAL]. Required by
+  the OpenMapTiles schema license (CC-BY) whenever tiles generated with the
+  OpenMapTiles profile (planetiler default) are rendered — the credit must be
+  visible to users, joined with STR-OSM (the tile DATA is ODbl OSM; the tile
+  SCHEMA carries this credit). First used by the 2026-09-06 basemap bake
+  (`tools/bake/basemap.ps1` → per-region PMTiles).
+- Used in: map footer (whenever OMT-profile tiles render), credits screen.
+
 ## Per-asset CC-BY rows (filled by CI)
 
 Rows of THIRD_PARTY_ASSETS.md marked `y` (plus voluntary CC0 credits, marked
@@ -152,7 +165,12 @@ Compact form; same legal strings, both languages:
 
 The footer carries OSM + Copernicus only; the full NASA/USGS acknowledgment
 and Geofabrik credit live in the credits screen (kept out of the footer for
-size, but present wherever terrain/imagery is discussed in docs).
+size, but present wherever terrain/imagery is discussed in docs). When
+vector tiles generated with the OpenMapTiles profile are rendered, the
+footer joins STR-OMT with STR-OSM:
+`© OpenMapTiles © OpenStreetMap contributors` (link targets per the two
+string entries above) — the OMT credit is a visible-credit obligation of
+the tile schema, not a footer-size decoration.
 
 ## Docs and repo attribution
 

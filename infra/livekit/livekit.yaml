@@ -1,0 +1,32 @@
+# =============================================================================
+# Kwetu LiveKit dev config — minimal, localhost-scale.
+#
+# Pinned image: livekit/livekit-server:v1.13.6 (docker-compose.yml; the
+# ARCHITECTURE.md §13 "[PLACEHOLDER — pin at Phase 0]" for the LiveKit server
+# is resolved there). API keys do NOT live in this file — they ride the
+# LIVEKIT_KEYS environment variable (key:secret), set by docker-compose.yml
+# from the gitignored .env. Keys stay server-side only: browsers receive
+# short-lived tokens minted by the Go runtime (NETWORKING.md §10).
+#
+# OPEN ITEM — TURN (NETWORKING.md §10 / tracked in infra/README-dev.md):
+# embedded TURN is the decided topology, but it needs a real domain +
+# CA-issued certificate (TURN-over-TLS on 443 for CGNAT'd mobile clients).
+# Not configurable on a localhost dev box tonight; no `turn:` block is set.
+# =============================================================================
+
+port: 7880
+
+# Listen on all interfaces INSIDE the container; the host side is loopback-
+# bound by the compose port mapping (127.0.0.1:7880->7880).
+bind_addresses:
+  - "0.0.0.0"
+
+rtc:
+  # ICE/TCP fallback port (NETWORKING.md / ARCHITECTURE.md §2). Not published
+  # to the host in the dev compose; voice media testing comes with Phase 6.
+  tcp_port: 7881
+  use_external_ip: false
+  enable_loopback_candidate: false
+
+logging:
+  level: info

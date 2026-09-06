@@ -1,0 +1,7 @@
+Nakama auto-loads Go runtime modules from data_dir/modules/*.so
+(data_dir = /nakama/data, mounted from infra/nakama/data).
+
+TODO (Phase 5 multiplayer agent): build the Go runtime module against the
+Nakama 3.37.0 server API with the Go version Nakama 3.37.0 requires, and
+place the resulting .so here. Nothing is built or mounted tonight — the
+compose mount for this directory already exists.

@@ -1,0 +1,161 @@
+# =============================================================================
+# Kwetu dev infrastructure stack.
+#
+# Topology (ARCHITECTURE.md §1): browser -> Caddy -> Nakama -> Postgres, with
+# LiveKit as a separate SFU. One monolithic stateful Nakama OSS node.
+#
+# Run (from the repo root — the .env lives there, compose otherwise looks in
+# the compose file's own directory):
+#
+#   docker compose --env-file .env -f infra/docker-compose.yml up -d
+#   docker compose --env-file .env -f infra/docker-compose.yml ps
+#   docker compose --env-file .env -f infra/docker-compose.yml stop
+#
+# Port plan: ALL host bindings are 127.0.0.1 (loopback only) — nothing here is
+# reachable from another machine. Dev host ports and the taken-port survey
+# they were chosen against: infra/README-dev.md.
+#
+# Secrets (ARCHITECTURE.md §10): every changed-from-default Nakama key is
+# injected below as a command-line flag interpolated from the repo-root .env.
+# Nakama's YAML config has no ${ENV} expansion and env vars are not a config
+# layer for its own subsystems [EXTERNAL, verified 2026-09-06,
+# https://heroiclabs.com/docs/nakama/getting-started/configuration/], so
+# flags are the only injection point that keeps secrets out of the tracked
+# config.yml. Interpolated flags are visible in `docker inspect` — acceptable
+# for a loopback-only dev stack, replaced by a real secret mechanism at deploy.
+#
+# Image pins (ARCHITECTURE.md §13: exact tags, no `latest`):
+#   postgres 16.8-alpine        [EXTERNAL, verified 2026-09-06,
+#                                https://hub.docker.com/_/postgres tags]
+#   nakama 3.37.0               ARCHITECTURE.md §13 pin; pulled from
+#                               registry.heroiclabs.com anonymously 2026-09-06
+#   caddy 2.11.4-alpine         [EXTERNAL, verified 2026-09-06,
+#                                https://hub.docker.com/_/caddy tags] — the
+#                                §13 "[PLACEHOLDER — pin at Phase 0]" resolved
+#   livekit-server v1.13.6      [EXTERNAL, verified 2026-09-06,
+#                                https://hub.docker.com/r/livekit/livekit-server
+#                                tags] — newest stable tag; `latest` updated
+#                                2026-08-26 == v1.13.6
+# =============================================================================
+
+name: kwetu
+
+services:
+  postgres:
+    image: postgres:16.8-alpine
+    container_name: kwetu-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    # Dev convenience only. 5432 itself is untouched on this host; 15432 avoids
+    # the other Postgres containers already published here (5433, 55432).
+    ports:
+      - "127.0.0.1:${HOST_POSTGRES_PORT}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 3s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  nakama:
+    image: registry.heroiclabs.com/heroiclabs/nakama:3.37.0
+    container_name: kwetu-nakama
+    entrypoint: ["/bin/sh", "-ecx"]
+    # ">-" folds everything below into ONE sh line. The nakama binary is NOT
+    # on PATH in this image — full /nakama/nakama paths are required
+    # [MEASURED 2026-09-06: `nakama: not found`, exit 127, on first run].
+    command:
+      - >-
+        /nakama/nakama migrate up --database.address postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable &&
+        exec /nakama/nakama --config /nakama/config.yml
+        --data_dir /nakama/data
+        --database.address postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable
+        --socket.server_key ${NAKAMA_SOCKET_SERVER_KEY}
+        --session.encryption_key ${NAKAMA_SESSION_ENCRYPTION_KEY}
+        --session.refresh_encryption_key ${NAKAMA_SESSION_REFRESH_ENCRYPTION_KEY}
+        --runtime.http_key ${NAKAMA_RUNTIME_HTTP_KEY}
+        --console.username ${NAKAMA_CONSOLE_USERNAME}
+        --console.password ${NAKAMA_CONSOLE_PASSWORD}
+    volumes:
+      # Non-secret server config (tracked file, ro).
+      - ./nakama/config.yml:/nakama/config.yml:ro
+      # data_dir: runtime modules live in /nakama/data/modules/*.so. TODO
+      # (Phase 5 agent): build the Go runtime module with the Go version
+      # pinned for Nakama 3.37.0 and drop the .so here — Nakama auto-loads
+      # every *.so in data_dir/modules. Nothing is mounted into that
+      # directory tonight; see infra/nakama/data/modules/.
+      - ./nakama/data:/nakama/data
+    ports:
+      # Client HTTP API + WebSocket (NETWORKING.md §3: normally reached via
+      # Caddy same-origin; published on the loopback for dev debugging).
+      - "127.0.0.1:${HOST_NAKAMA_API_PORT}:7350"
+      # Console (HTTP). ARCHITECTURE.md §2: internal-only in production
+      # (SSH tunnel). This dev publish exists so the console is verifiable
+      # from this machine; it is loopback-bound and must be REMOVED, not
+      # widened, before any deployment.
+      - "127.0.0.1:${HOST_NAKAMA_CONSOLE_PORT}:7351"
+      # Deliberately NOT published (ARCHITECTURE.md §2):
+      #   7348 console gRPC — internal only
+      #   7349 client gRPC  — browsers use 7350; publish only if a
+      #                       non-browser client ever needs it
+      #   9100 Prometheus   — internal-network scrape only (§9); verified
+      #                       via `docker compose exec` tonight.
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "/nakama/nakama", "healthcheck"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2.11.4-alpine
+    container_name: kwetu-caddy
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./caddy/www:/srv:ro
+      # caddy_data persists the internal CA root + issued certs across
+      # restarts — without it every `up` would mint a new local CA and every
+      # client would have to re-trust.
+      - caddy_data:/data
+      - caddy_config:/config
+    ports:
+      # TLS termination for the single dev origin (https://localhost:8443).
+      # Caddy's :80 ACME side is intentionally not published — no public
+      # ACME tonight; the internal CA covers the dev cert.
+      - "127.0.0.1:${HOST_CADDY_HTTPS_PORT}:443"
+    depends_on:
+      - nakama
+    restart: unless-stopped
+
+  livekit:
+    image: livekit/livekit-server:v1.13.6
+    container_name: kwetu-livekit
+    command: ["--config", "/etc/livekit/livekit.yaml"]
+    environment:
+      # API keys ride env, not the config file (binary help: --keys
+      # [$LIVEKIT_KEYS]). Keys live only server-side; browsers receive
+      # short-lived minted tokens (§10). Quirk [MEASURED 2026-09-06]: the
+      # parser demands "key: secret" INCLUDING the space after the colon.
+      LIVEKIT_KEYS: "${LIVEKIT_API_KEY}: ${LIVEKIT_API_SECRET}"
+    volumes:
+      - ./livekit/livekit.yaml:/etc/livekit/livekit.yaml:ro
+    ports:
+      # Signaling only (HTTP/WS). WebRTC media (UDP 50000-60000 + TCP 7881)
+      # is NOT published in the dev compose — localhost voice testing comes
+      # with the Phase 6 voice work; TURN is a recorded open item
+      # (infra/README-dev.md).
+      - "127.0.0.1:${HOST_LIVEKIT_HTTP_PORT}:7880"
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  caddy_data:
+  caddy_config:

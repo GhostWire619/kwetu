@@ -1,0 +1,88 @@
+# =============================================================================
+# Kwetu dev reverse proxy — TLS termination + static shell + same-origin API.
+#
+# Topology: NETWORKING.md §3 (one origin for the browser) and
+# ARCHITECTURE.md §1 (Caddy terminates TLS, serves static assets,
+# reverse-proxies Nakama HTTP + WS on 7350).
+#
+# Dev certificates: `local_certs` forces Caddy's internal CA (a real local
+# X.509 certificate for localhost — no public DNS/ACME tonight). The browser
+# must trust Caddy's local root once to silence the warning; microphone
+# access needs a secure context, and localhost is a potentially-trustworthy
+# origin in Chromium/Firefox regardless of certificate validity, so the dev
+# warning page (after explicit user acceptance) still qualifies. Details and
+# the trust-the-CA recipe: infra/README-dev.md.
+#
+# Global options
+{
+	# Dev-only: internal CA instead of public ACME (see header).
+	local_certs
+
+	# ARCHITECTURE.md §11: Caddy config reloads (including routine
+	# certificate renewal) forcibly close in-flight WebSockets, and names
+	# `stream_close_delay` as the mitigation. MEASURED 2026-09-06 against
+	# the pinned image: that option DOES NOT EXIST in caddy 2.11.4 — bare
+	# Caddyfile use fails adaptation ("unrecognized directive"), nesting
+	# under `servers` fails ("unrecognized servers option"), and native-JSON
+	# validation rejects the field ("json: unknown field"). The actual
+	# protection is Caddy's default `grace_period`, which is eternal
+	# (in-flight connections are never forcefully closed at config change or
+	# shutdown — [EXTERNAL, https://caddyserver.com/docs/caddyfile/options]).
+	# A delay, not immunity in any case: Caddy upgrades and host restarts
+	# still cut connections, and the client reconnect flow
+	# (ARCHITECTURE.md §11) remains the primary defense. Doc discrepancy
+	# recorded in infra/README-dev.md (ARCHITECTURE.md itself is out of this
+	# task's write scope).
+
+	# Caddy's admin endpoint (default localhost:2019) stays inside the
+	# container — not published by docker-compose.yml.
+}
+
+localhost {
+	# Static client shell. PLACEHOLDER: infra/caddy/www/ holds a hello-world
+	# index.html until the Phase 1 client build lands; TLS + the proxy are
+	# testable today.
+	root * /srv
+
+	# ---- Response caching (starting point; ARCHITECTURE.md §7) --------------
+	# Content-hashed asset URLs are immutable -> cache forever. Matching by
+	# extension is the dev stand-in; Phase 1 tightens this to the hashed
+	# filenames the build pipeline emits (.../<name>-<sha256>.<ext>).
+	@immutable path *.glb *.ktx2 *.pmtiles *.basis *.wasm *.bin *.png *.jpg *.webp *.woff2
+	header @immutable Cache-Control "public, max-age=31536000, immutable"
+
+	# App shell: revalidate every load (cache is best-effort, §11). Matches
+	# both the bare origin path and the literal file — a plain `/index.html`
+	# matcher misses `/` (index resolution happens after header matching).
+	@shell path / /index.html
+	header @shell Cache-Control "no-cache"
+
+	# API responses are never cached.
+	header /api/* Cache-Control "no-store"
+
+	# ---- Compression ---------------------------------------------------------
+	# MEASURED 2026-09-06, caddy 2.11.4-alpine: no brotli encoder ships
+	# (`encode zstd br gzip` fails adaptation: "module not registered:
+	# http.encoders.br") — so zstd > gzip by client preference, and the
+	# "no brotli on .glb/.ktx2" rule is satisfied vacuously tonight.
+	#
+	# Already-compressed asset formats need NO exclusion rule either,
+	# MEASURED: the encode middleware's own compressible-content-type filter
+	# refuses model/gltf-binary (.glb) and image/ktx2 (.ktx2) — no
+	# Content-Encoding is emitted for either (2 KiB fixtures, zstd-only and
+	# gzip-only Accept-Encoding), while text/plain and text/html do
+	# compress. An explicit path-matcher double-encode was tried for this
+	# and removed as dead weight once measured.
+	encode zstd gzip
+
+	# ---- Same-origin API (NETWORKING.md §3) ---------------------------------
+	# /v2/*  Nakama HTTP API (grpc-gateway): auth + RPC.
+	# /ws    Nakama real-time socket: the game WebSocket upgrade.
+	# /api/* Kwetu's API alias — same upstream, kept as the stable
+	#        front-of-house prefix for RPCs we want behind one path.
+	reverse_proxy /api/* nakama:7350
+	reverse_proxy /v2/* nakama:7350
+	reverse_proxy /ws nakama:7350
+
+	file_server
+}

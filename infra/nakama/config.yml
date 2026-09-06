@@ -1,0 +1,42 @@
+# =============================================================================
+# Kwetu Nakama server config — NON-SECRET values only.
+#
+# Tracked file: nothing in here is a credential. The security-model keys
+# (socket.server_key, session.encryption_key, session.refresh_encryption_key,
+# runtime.http_key, console.username, console.password — ARCHITECTURE.md §10)
+# are NOT written here: Nakama's YAML config does not expand ${ENV}
+# placeholders and environment variables are not a config layer for Nakama's
+# own subsystems [EXTERNAL, verified 2026-09-06,
+# https://heroiclabs.com/docs/nakama/getting-started/configuration/], so they
+# are injected as command-line flags by docker-compose.yml from the
+# gitignored repo-root .env. Flag names verified against the pinned binary:
+# `docker run --rm registry.heroiclabs.com/heroiclabs/nakama:3.37.0 --help`
+# [MEASURED 2026-09-06].
+# =============================================================================
+
+data_dir: "/nakama/data"
+
+socket:
+  port: 7350
+  # max_message_size_bytes: deliberately left at the Nakama default of 4096
+  # [EXTERNAL, configuration reference, URL above]. NETWORKING.md §4: an
+  # oversized message makes the server CLOSE the connection — the cap is
+  # fatal. Kwetu's own 1500 B budget is ours to enforce client-side
+  # (coalescing/delta/compression, NETWORKING.md §4); this server cap is a
+  # backstop, not the product budget, so it is not tuned down here.
+
+console:
+  port: 7351
+  # username/password: injected via flags from .env (see header). In
+  # production the console is never published at all (ARCHITECTURE.md §2).
+
+metrics:
+  # B-CONST-04: prometheus_port DEFAULTS TO 0 — metrics disabled. An
+  # unmodified Nakama install exposes no metrics, and ARCHITECTURE.md §9
+  # treats a deployment without this port set as unobservable, therefore
+  # unfinished. 9100 stays on the compose-internal network; never published
+  # to the host.
+  prometheus_port: 9100
+
+logger:
+  level: "info"

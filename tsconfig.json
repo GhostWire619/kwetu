@@ -23,7 +23,7 @@
     // through the 'three' specifier, which is independent of "types".
     "types": []
   },
-  "include": ["src", "tests", "vite.config.ts", "vitest.config.ts"],
+  "include": ["client/src", "tests", "vite.config.ts", "vitest.config.ts"],
   "exclude": ["node_modules", "tools/spikes"]
   // tools/spikes/** is the throwaway probe carve-out (CLAUDE.md): probes run
   // under vitest (esbuild transpile) and are deliberately outside the

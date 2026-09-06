@@ -17,6 +17,9 @@ coverage/
 .env.*
 *.pem
 !**/test/fixtures/*.pem
+!.env.example
+infra/nakama/data/.cookie
+infra/nakama/data/*.log
 
 # data/ is the ODbL layer: derived/generated artifacts are reproducible
 # by pinned build scripts (see data/README.md) and are never committed.
@@ -33,3 +36,15 @@ data/**
 # Bake caches
 .cache/
 tmp/
+
+# Local bake working area (raw downloads, COGs, ephemeris kernels — pinned
+# scripts re-fetch everything; see DATA_SOURCES.md regeneration rules)
+.bake/
+
+# Playwright artifacts
+playwright-report/
+test-results/
+blob-report/
+
+# Local agent state
+.claude/

@@ -1,0 +1,26 @@
+Kwetu terrain bake — stone-town
+baked 2026-09-05T22:28:56.350Z (wall clock [MEASURED — bake provenance only; not a simulation instant])
+
+sources (Copernicus DEM GLO-30, AWS Open Data mirror s3://copernicus-dem-30m [EXTERNAL]):
+  Copernicus_DSM_COG_10_S06_00_E039_00_DEM  nodes 0  read 1568.8 ms  bytes 7,637,075  sha256 79b62fa2ef39465d6bd696e12da6a6756accb571d454c92a7216a86a6ea11daf  md5==ETag true
+  Copernicus_DSM_COG_10_S07_00_E039_00_DEM  nodes 156,313  read 1719.0 ms  bytes 12,892,227  sha256 22ce1c858c095fa44159e7e371a53b966a6e38524be98c465398c3bde043e8c1  md5==ETag true
+window (deg): lon 39.14..39.26  lat -6.21..-6.11
+grid: 433 x 361 nodes = 156,313 (1-arcsec lattice, pixel-is-point)
+grid corners (deg): NW (39.140000, -6.110000)  NE (39.260000, -6.110000)  SE (39.260000, -6.210000)  SW (39.140000, -6.210000) = ENU anchor
+node spacing: 30.7418 m E-W x 30.7187 m N-S [derived — WGS84 radii at the anchor, COORDINATE_SYSTEM.md §5]
+sea rule: heights < 0 -> 0 (clamped 0 cells)
+heights (m, orthometric EGM2008): raw min 0.000 max 129.747 mean 15.6070 | clamped min 0.000 max 129.747 mean 15.6070
+  zero cells: 83,077 (53.15% of window) — ocean/plain; WBM water-mask refinement is a LATER bake step (DATA_SOURCES.md)
+
+timings: read 3287.8 ms | mosaic 7.1 ms | sea rule 3.6 ms | decimate 207.0 ms | glb 1.5 ms | write 4.0 ms | verify 13.5 ms | hashes 3369.4 ms | total 3617.6 ms
+mesh: 19,777 vertices, 39,301 triangles (maxError 1.5 m, achieved 1.500 m, rmsd 0.7379 m)
+  winding: 0 triangles flipped to CCW-from-above, 0 degenerate
+  bbox (m, local ENU): min (0.000, 0.000, 0.000)  max (13280.474, 11058.727, 129.747)
+glb: 709,852 B (JSON chunk 888 B + BIN chunk 708,936 B) — structural verification PASSED (30 checks)
+  vertex spot-checks vs grid: 64/64 exact (f32 bitwise)
+  corner vertices: 4/4 present
+
+outputs:
+  C:\Users\lugat\Projects\kwetu\.bake\meshes\stone-town.terrain.glb
+  C:\Users\lugat\Projects\kwetu\.bake\meshes\stone-town.terrain.manifest.json
+NOTE: .bake/ is gitignored — the repo artifact is tools/bake/terrain.mjs; outputs are regenerable by re-running it (DATA_SOURCES.md). No manifest copy is kept in the repo tree.

@@ -12,13 +12,19 @@
   },
   "dependencies": {
     "@dimforge/rapier3d-deterministic-compat": "0.20.0",
+    "@heroiclabs/nakama-js": "2.8.0",
     "astronomy-engine": "2.1.19",
     "i18next": "26.4.2",
+    "livekit-client": "2.22.2",
     "three": "0.185.1"
   },
   "devDependencies": {
+    "@playwright/test": "1.63.0",
     "@types/node": "^24.13.3",
     "@types/three": "^0.185.4",
+    "delatin": "0.2.0",
+    "geotiff": "3.0.5",
+    "i18next-conv": "17.0.0",
     "typescript": "^7.0.2",
     "vite": "^8.2.2",
     "vitest": "^5.0.0"

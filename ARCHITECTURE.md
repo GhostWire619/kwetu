@@ -327,11 +327,15 @@ has read the docs:
 
 - **Caddy config reload forcibly closes WebSockets.** Reloading Caddy
   (including routine certificate renewal) closes in-flight streams.
-  Mitigation: set the Caddyfile global `stream_close_delay` so streams
-  are not cut at the instant of reload — and treat it as a *delay*, not
-  immunity: Caddy upgrades and host restarts will still cut connections,
-  so the reconnect flow below is the primary defense. Config changes
-  ship in low-traffic windows regardless.
+  Mitigation: rely on Caddy's default eternal `grace_period` — during a
+  config reload the old config keeps serving existing connections until
+  they end naturally, so streams are not cut at the instant of reload
+  ([MEASURED 2026-09-06, caddy 2.11.4: `grace_period` is the supported
+  mechanism; the earlier-documented `stream_close_delay` does not exist in
+  this Caddy version]) — and treat it as *grace*, not immunity: Caddy
+  upgrades and host restarts will still cut connections, so the reconnect
+  flow below is the primary defense. Config changes ship in low-traffic
+  windows regardless.
 - **Reconnect / rejoin flow, layered:** (a) session refresh — client
   refreshes the JWT on expiry and on any 401; (b) socket reconnect —
   capped exponential backoff with jitter; (c) match rejoin — the client

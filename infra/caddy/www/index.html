@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Kwetu — dev shell placeholder</title>
+  <style>
+    body {
+      font: 16px/1.6 system-ui, sans-serif;
+      max-width: 40rem;
+      margin: 4rem auto;
+      padding: 0 1rem;
+      color: #1a1a1a;
+    }
+    h1 { margin-bottom: 0.25rem; }
+    code { background: #f0f0f0; padding: 0.1em 0.35em; border-radius: 4px; }
+    .note { color: #555; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+  <h1>Kwetu</h1>
+  <p>Dev infrastructure placeholder shell. TLS is terminated here by Caddy
+  with its local CA; the API is proxied same-origin.</p>
+  <p class="note">
+    Static client build lands at Phase 1. Until then this page only proves
+    that <code>https://localhost</code>, the Caddy certificate, and the
+    <code>/api</code>, <code>/v2</code> and <code>/ws</code> reverse-proxy
+    routes work. See <code>infra/README-dev.md</code>.
+  </p>
+</body>
+</html>
