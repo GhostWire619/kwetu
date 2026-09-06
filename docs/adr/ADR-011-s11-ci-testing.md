@@ -49,6 +49,15 @@ shortest-round-trip JSON-text hash. The two runs agree bitwise; the hash is stab
 A different seed produces a different hash (the check is live, not vacuous). Cross-platform
 agreement is **not** measured tonight [PLACEHOLDER — gate: CI matrix].
 
+> **Addendum 2026-09-06 (orchestrator landing pass).** The cross-platform half was measured
+> after this ADR was written: the same suite run inside `node:24-alpine` (Linux x86-64,
+> Docker, image digest `sha256:e67514e5d0f6c46656005e1b693b2ec9d52e80b641307de684d4a015ba7a4eaf`,
+> named volume shadowing `node_modules` for a clean in-container `npm ci`) produced the
+> identical canonical sha256 `f127593e229cb26f942bade3bf849b8b21f77fed5baa909b3a7215074e2e9f7e`
+> from the same seed schedule — B-EPH-02's cross-platform half is [MEASURED 2026-09-06] and
+> recorded in ROADMAP §3.8 and COORDINATE_SYSTEM.md G-05. The CI matrix remains open as
+> regression infrastructure, not as the first proof.
+
 **C — golden ephemeris (B-EPH-01).** Oracle: skyfield 1.55 (Python 3.14.2) with
 `de440s.bsp`, sha256
 `c1c7feeab882263fc493a9d5a5b2ddd71b54826cdf65d8d17a76126b260a49f2`, 32 726 016 bytes,
@@ -140,21 +149,26 @@ the explicit `testMatch: '**/*.pw.ts'` live on the Playwright side.
 
 ## Consequences
 
-Fills ROADMAP §Budgets **B-EPH-01** = max 0.345 arcmin angular (Moon) / 46.3 km linear at
-lunar distance [MEASURED 2026-09-06, golden fixtures vs astronomy-engine] and **B-EPH-02**
-for the same-host half (bitwise PASS, sha256 pinned; cross-platform half
-[PLACEHOLDER — gate: CI matrix]). Phase 7's ephemeris gate now has a measured starting
+Informs (does **not** fill) ROADMAP §Budgets **B-EPH-01** = max 0.345 arcmin angular (Moon) /
+46.3 km linear at lunar distance [MEASURED 2026-09-06, golden fixtures vs astronomy-engine] —
+B-EPH-01 is defined as *our propagator* vs fixtures, this measured the library residual, and
+ROADMAP §7.1 deliberately upheld that scope distinction on 2026-09-06; the row stays
+[PLACEHOLDER — gate: Phase 7]. Fills **B-EPH-02** for the same-host half (bitwise PASS, sha256
+pinned); the cross-platform half was measured post-writing — see the Evidence Addendum — and
+CI still carries it as regression infrastructure. Phase 7's ephemeris gate now has a measured starting
 envelope: our JS ephemeris is already sky-quality against DE440s, so Phase 7's work is the
 propagator, not the sky. Easier: any future astronomy-engine version bump is a one-command
 regeneration + a measured residual diff instead of a trust decision. Harder/locked in: the
 determinism hash format (bit patterns) is now a contract for every future replay/authority
 feature; the `*.pw.ts` naming and the IPv4/direct-node webServer wiring must survive
 CI-setup refactors; the ephemeris fixture embeds its own conventions, so "which frame was
-this?" has one answer. Open items carried: cross-platform bitwise proof (CI matrix);
-re-homing the S0.1 G-01/G-02 seeds and probe suites from `tools/spikes/s0.1/` into
-`tests/golden/` per ADR-002's deletion condition; Horizons-derived fixtures (DATA_SOURCES.md)
+this?" has one answer. Open items carried: CI matrix for cross-platform regression; the
+S0.1 G-01/G-02 seeds re-homed as CI-enforced suites under `tests/engine/` (frames/precision/
+geodesy/localScene — recorded in §7.1 2026-09-06; `tools/spikes/s0.1/` retained until the
+overlap is reconciled per ADR-002's deletion condition); Horizons-derived fixtures (DATA_SOURCES.md)
 remain a later, build-time-only addition — tonight's oracle is the kernel directly, which is
 the stronger, service-free reference; THIRD_PARTY_ASSETS.md ledger rows for the Python
-oracle chain (skyfield 1.55, jplephem 2.24, numpy 2.4.4 — MIT/BSD-class, versions
-pre-installed by the environment, not added by this spike) are owned centrally and must
-land with the ledger gate.
+oracle chain (skyfield 1.55, jplephem 2.24, numpy 2.4.4 — license class **unverified at this
+writing, an expectation only**; the versions were pre-installed by the environment, not added
+by this spike) are owned centrally and landed at the ledger gate 2026-09-06 (code-15/32/33,
+verified from installed package metadata).

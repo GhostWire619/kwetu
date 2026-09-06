@@ -131,7 +131,7 @@
         "docSeedGastDeg": 344.1180787594703,
         "feedConventionGastDiffDeg": 0.026255556286116644
       },
-      "note": "B-TIME-01: max residual of the TT scale vs astronomy-engine 2.1.19 is 0 days (bitwise) at all 7 samples via FromTerrestrialTime, and the library's linear UT-days convention agrees bitwise with tt/86400 for ms-exact samples. The library's own DeltaT model (Espenak-Meeus) is 63.85 s at J2000 rising to 75.43 s at 2026 — feeding our TT as a naive Date would misplace it by that amount (GAST 0.3153 deg = 18.9 arcmin at the §12 instant). The committed §12 seed / ADR-002 chain used the date-feed convention; feed-convention difference measured at 0.02626 deg (≈ 5.5 s of Earth rotation) — golden fixtures must pin the feed convention (S0.11 gate)."
+      "note": "B-TIME-01: max residual of the TT scale vs astronomy-engine 2.1.19 is 0 days (bitwise) at all 7 samples via FromTerrestrialTime, and the library's linear UT-days convention agrees bitwise with tt/86400 for ms-exact samples. The library's own DeltaT model (Espenak-Meeus) is 63.85 s at J2000 rising to 75.43 s at 2026 — feeding our TT as a naive Date would misplace it by that amount (GAST 0.3153 deg = 18.9 arcmin at the §12 instant). The committed §12 seed / ADR-002 chain used the date-feed convention; feed-convention difference measured at 0.02626 deg (≈ 6.3 s of Earth rotation at the sidereal rate 0.0041781 deg/s; corrected 2026-09-06 from an earlier mis-stated ≈ 5.5 s — the ADR-008 figure was always 6.3 s) — golden fixtures must pin the feed convention (S0.11 gate)."
     },
     "f64Precision": {
       "ttSeconds": 841968069.184,

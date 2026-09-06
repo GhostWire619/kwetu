@@ -9,7 +9,10 @@ decision reversal produces an ADR here. One file per decision, named
 ```markdown
 # ADR-NNN: <short title>
 
-- **Status**: proposed | accepted | superseded by ADR-MMM
+- **Status**: proposed | accepted | accepted (measured; gaps listed) | superseded by ADR-MMM
+  — `accepted (measured)` only when every named exit-criterion component is met; where a
+  component is deferred, use `accepted (measured; X re-gated to Phase N per ADR-MMM)` and
+  make sure the Consequences open-item list agrees with the Status line.
 - **Date**: yyyy-mm-dd
 - **Deciders**: <who/what session>
 
@@ -36,7 +39,7 @@ which ROADMAP §Budgets rows this fills.
 |---|---|---|
 | [ADR-001](ADR-001-flight-frames-and-clock.md) | Local physics, fleet movement and a shared clock | accepted design baseline; implementation unverified |
 | [ADR-002](ADR-002-s01-frames-precision-rebase.md) | S0.1 — frame chain validated, f64/f32 boundaries, and contact-bubble rebase | accepted (measured); geodesy reference implementation still open |
-| [ADR-003](ADR-003-s02-planet-lod-rendering.md) | S0.2 — planet LOD, crack stitching and depth strategy | *reserved slot — S0.2 in progress at the 2026-09-06 landing pass; spike code exists in tools/spikes/s0.2/ awaiting its measurement + ADR* |
+| [ADR-003](ADR-003-s02-planet-lod-rendering.md) | S0.2 — planet LOD, crack stitching and depth strategy | **reserved — S0.2 measurement incomplete** (quadtree/log flight measured; CDLOD comparison + silhouette limb measurement pending; ADR decision unwritten — Phase 0 cannot close) |
 | [ADR-004](ADR-004-s03-load-budget.md) | S0.3 — load budget measured; Rapier WASM shipping decision | accepted; B-LOAD-10 re-gated to Phase 1 (ROADMAP §7.1) |
 | [ADR-005](ADR-005-s04-ledger-ci-check.md) | S0.4 — the attribution ledger gate (R0–R8 checker) | accepted; hosted-CI wiring deferred per ADR-011 Decision 6 |
 | [ADR-006](ADR-006-s05-trademark-search.md) | S0.5 — "Kwetu" trademark search (partial; human gates remain) | proposed — conditional GO for internal use, NO-GO for public use until human searches close |

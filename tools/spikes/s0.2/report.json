@@ -1,0 +1,519 @@
+{
+  "spike": "S0.2",
+  "reportStatus": "PARTIAL — quadtree/log-depth flight only; CDLOD scheme implemented but unmeasured; silhouette rows are NO-DATA (limb detection failed at all 4 captures, 192/192 columns invalid — the maxResidualPx 0 is the initial value, not a measurement); a 6.7 s max-frame stall is unexplained; probe code was edited after measuredAt. Full regeneration deferred to a quiet machine so concurrent load cannot distort the numbers (2026-09-06 audit, orchestrator).",
+  "measuredAt": "2026-09-06T01:52:05.793Z",
+  "method": {
+    "browser": "headed Chromium via Playwright (headless SwiftShader invalid for perf rows)",
+    "viewport": "1280x720 @ DPR 1",
+    "server": "vite dev server 127.0.0.1:5272 (pinned three resolved from node_modules)",
+    "frameTime": "rAF deltas, vsync-quantized on this host; first 3 s of each flight excluded (LOD warmup)",
+    "drawCalls": "renderer.info.render.calls per frame, scene pass only (revz-f32 +1 fullscreen blit excluded)",
+    "vram": "exact sum of probe-created geometry attribute+index bytes (+ f32-depth RT bytes for revz-f32); browser does not expose driver VRAM",
+    "flight": "42 s scripted 1 m -> 1e6 m -> 1e3 m flight (tools/spikes/s0.2/flightPath.ts), identical path per run",
+    "depthFixture": "front/back quad pairs at 8 m / 1 mm, 5 km / 5 cm, 500 km / 2 m; back quad drawn LAST (renderOrder 2) so the depth compare is load-bearing; readPixels sampling",
+    "silhouette": "limb row profile (48 columns) at t=16/18/20/22 s of the high-hold pan; residual after median-shift removal, px"
+  },
+  "host": {
+    "platform": "win32 10.0.26200",
+    "cpuModel": "AMD Ryzen 7 7445HS w/ Radeon 740M Graphics     ",
+    "cores": 12,
+    "totalRamGB": 15.2,
+    "displayHzProxy": 62.8,
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36",
+    "gpu": "ANGLE (AMD, AMD Radeon 740M Graphics (0x00001901) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "depthBitsDefaultFb": 24,
+    "extClipControl": true,
+    "browserVersion": "153.0.8010.12"
+  },
+  "versions": {
+    "three": "0.185.1",
+    "playwright": "1.63.0",
+    "vite": "8.2.2",
+    "node": "v24.13.0"
+  },
+  "smoke": {
+    "mode": "smoke",
+    "ok": true,
+    "drawCalls": 697,
+    "gpu": "ANGLE (AMD, AMD Radeon 740M Graphics (0x00001901) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "depthBits": 24,
+    "clipControl": true
+  },
+  "depth": {
+    "log": {
+      "mode": "depth",
+      "depth": "log",
+      "pairs": [
+        {
+          "d": 8,
+          "gap": 0.001,
+          "innerFrontFrac": 1,
+          "innerBackFrac": 0,
+          "annulusBackFrac": 0.9234167893961709,
+          "pass": true
+        },
+        {
+          "d": 5000,
+          "gap": 0.05,
+          "innerFrontFrac": 1,
+          "innerBackFrac": 0,
+          "annulusBackFrac": 1,
+          "pass": true
+        },
+        {
+          "d": 500000,
+          "gap": 2,
+          "innerFrontFrac": 1,
+          "innerBackFrac": 0,
+          "annulusBackFrac": 0.9234167893961709,
+          "pass": true
+        }
+      ],
+      "allPass": true,
+      "debug": {
+        "histogram": {
+          "sky": 1612,
+          "front": 350,
+          "back": 342,
+          "other": 0
+        },
+        "grid": "................................................................\n.....................BBBBBBBBBBBBBBBBBBBBBB.....................\n.....................BBBBBBBBBBBBBBBBBBBBBB.....................\n.....................BBBFFFFFFFFFFFFFFFFBBB.....................\n......................BBFFFFFFFFFFFFFFFFBB......................\n......................BBFFFFFFFFFFFFFFFFBB......................\n......................BBFFFFFFFFFFFFFFFBBB......................\n......................BBBFFFFFFFFFFFFFFBBB......................\n......................BBBFFFFFFFFFFFFFFBBB......................\n......................BBBFFFFFFFFFFFFFFBBB......................\n......................BBBFFFFFFFFFFFFFFBBB......................\n......................BBBBBBBBBBBBBBBBBBBB......................\n......................BBBBBBBBBBBBBBBBBBBB......................\n......................BBBBBBBBBBBBBBBBBBBB......................\n......................BBBFFFFFFFFFFFFFFBBB......................\n......................BBBFFFFFFFFFFFFFFBBB......................\n......................BBBFFFFFFFFFFFFFFBBB......................\n......................BBBFFFFFFFFFFFFFFBBB......................\n......................BBBFFFFFFFFFFFFFFBBB......................\n......................BBBFFFFFFFFFFFFFFBBB......................\n......................BBBFFFFFFFFFFFFFFBBB......................\n......................BBBFFFFFFFFFFFFFFBBB......................\n......................BBBBBBBBBBBBBBBBBBBB......................\n......................BBBBBBBBBBBBBBBBBBBB......................\n......................BBBBBBBBBBBBBBBBBBBB......................\n......................BBBFFFFFFFFFFFFFFBBB......................\n......................BBBFFFFFFFFFFFFFFBBB......................\n......................BBBFFFFFFFFFFFFFFBBB......................\n......................BBBFFFFFFFFFFFFFFBBB......................\n......................BBFFFFFFFFFFFFFFFBBB......................\n......................BBFFFFFFFFFFFFFFFFBB......................\n......................BBFFFFFFFFFFFFFFFFBB......................\n.....................BBBFFFFFFFFFFFFFFFFBBB.....................\n.....................BBBBBBBBBBBBBBBBBBBBBB.....................\n.....................BBBBBBBBBBBBBBBBBBBBBB.....................\n................................................................\n"
+      },
+      "capabilities": {
+        "gpu": "ANGLE (AMD, AMD Radeon 740M Graphics (0x00001901) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+        "depthBits": 24,
+        "clipControl": true,
+        "reversedEngaged": false,
+        "logDepth": true
+      }
+    },
+    "revz": {
+      "mode": "depth",
+      "depth": "revz",
+      "pairs": [
+        {
+          "d": 8,
+          "gap": 0.001,
+          "innerFrontFrac": 1,
+          "innerBackFrac": 0,
+          "annulusBackFrac": 0.9234167893961709,
+          "pass": true
+        },
+        {
+          "d": 5000,
+          "gap": 0.05,
+          "innerFrontFrac": 1,
+          "innerBackFrac": 0,
+          "annulusBackFrac": 1,
+          "pass": true
+        },
+        {
+          "d": 500000,
+          "gap": 2,
+          "innerFrontFrac": 1,
+          "innerBackFrac": 0,
+          "annulusBackFrac": 0.9234167893961709,
+          "pass": true
+        }
+      ],
+      "allPass": true,
+      "debug": {
+        "histogram": {
+          "sky": 1612,
+          "front": 350,
+          "back": 342,
+          "other": 0
+        },
+        "grid": "................................................................\n.....................BBBBBBBBBBBBBBBBBBBBBB.....................\n.....................BBBBBBBBBBBBBBBBBBBBBB.....................\n.....................BBBFFFFFFFFFFFFFFFFBBB.....................\n......................BBFFFFFFFFFFFFFFFFBB......................\n......................BBFFFFFFFFFFFFFFFFBB......................\n......................BBFFFFFFFFFFFFFFFBBB......................\n......................BBBFFFFFFFFFFFFFFBBB......................\n......................BBBFFFFFFFFFFFFFFBBB......................\n......................BBBFFFFFFFFFFFFFFBBB......................\n......................BBBFFFFFFFFFFFFFFBBB......................\n......................BBBBBBBBBBBBBBBBBBBB......................\n......................BBBBBBBBBBBBBBBBBBBB......................\n......................BBBBBBBBBBBBBBBBBBBB......................\n......................BBBFFFFFFFFFFFFFFBBB......................\n......................BBBFFFFFFFFFFFFFFBBB......................\n......................BBBFFFFFFFFFFFFFFBBB......................\n......................BBBFFFFFFFFFFFFFFBBB......................\n......................BBBFFFFFFFFFFFFFFBBB......................\n......................BBBFFFFFFFFFFFFFFBBB......................\n......................BBBFFFFFFFFFFFFFFBBB......................\n......................BBBFFFFFFFFFFFFFFBBB......................\n......................BBBBBBBBBBBBBBBBBBBB......................\n......................BBBBBBBBBBBBBBBBBBBB......................\n......................BBBBBBBBBBBBBBBBBBBB......................\n......................BBBFFFFFFFFFFFFFFBBB......................\n......................BBBFFFFFFFFFFFFFFBBB......................\n......................BBBFFFFFFFFFFFFFFBBB......................\n......................BBBFFFFFFFFFFFFFFBBB......................\n......................BBFFFFFFFFFFFFFFFBBB......................\n......................BBFFFFFFFFFFFFFFFFBB......................\n......................BBFFFFFFFFFFFFFFFFBB......................\n.....................BBBFFFFFFFFFFFFFFFFBBB.....................\n.....................BBBBBBBBBBBBBBBBBBBBBB.....................\n.....................BBBBBBBBBBBBBBBBBBBBBB.....................\n................................................................\n"
+      },
+      "capabilities": {
+        "gpu": "ANGLE (AMD, AMD Radeon 740M Graphics (0x00001901) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+        "depthBits": 24,
+        "clipControl": true,
+        "reversedEngaged": true,
+        "logDepth": false
+      }
+    },
+    "revz-f32": {
+      "mode": "depth",
+      "depth": "revz-f32",
+      "pairs": [
+        {
+          "d": 8,
+          "gap": 0.001,
+          "innerFrontFrac": 1,
+          "innerBackFrac": 0,
+          "annulusBackFrac": 0.9234167893961709,
+          "pass": true
+        },
+        {
+          "d": 5000,
+          "gap": 0.05,
+          "innerFrontFrac": 1,
+          "innerBackFrac": 0,
+          "annulusBackFrac": 1,
+          "pass": true
+        },
+        {
+          "d": 500000,
+          "gap": 2,
+          "innerFrontFrac": 1,
+          "innerBackFrac": 0,
+          "annulusBackFrac": 0.9234167893961709,
+          "pass": true
+        }
+      ],
+      "allPass": true,
+      "debug": {
+        "histogram": {
+          "sky": 1612,
+          "front": 350,
+          "back": 342,
+          "other": 0
+        },
+        "grid": "................................................................\n.....................BBBBBBBBBBBBBBBBBBBBBB.....................\n.....................BBBBBBBBBBBBBBBBBBBBBB.....................\n.....................BBBFFFFFFFFFFFFFFFFBBB.....................\n......................BBFFFFFFFFFFFFFFFFBB......................\n......................BBFFFFFFFFFFFFFFFFBB......................\n......................BBFFFFFFFFFFFFFFFBBB......................\n......................BBBFFFFFFFFFFFFFFBBB......................\n......................BBBFFFFFFFFFFFFFFBBB......................\n......................BBBFFFFFFFFFFFFFFBBB......................\n......................BBBFFFFFFFFFFFFFFBBB......................\n......................BBBBBBBBBBBBBBBBBBBB......................\n......................BBBBBBBBBBBBBBBBBBBB......................\n......................BBBBBBBBBBBBBBBBBBBB......................\n......................BBBFFFFFFFFFFFFFFBBB......................\n......................BBBFFFFFFFFFFFFFFBBB......................\n......................BBBFFFFFFFFFFFFFFBBB......................\n......................BBBFFFFFFFFFFFFFFBBB......................\n......................BBBFFFFFFFFFFFFFFBBB......................\n......................BBBFFFFFFFFFFFFFFBBB......................\n......................BBBFFFFFFFFFFFFFFBBB......................\n......................BBBFFFFFFFFFFFFFFBBB......................\n......................BBBBBBBBBBBBBBBBBBBB......................\n......................BBBBBBBBBBBBBBBBBBBB......................\n......................BBBBBBBBBBBBBBBBBBBB......................\n......................BBBFFFFFFFFFFFFFFBBB......................\n......................BBBFFFFFFFFFFFFFFBBB......................\n......................BBBFFFFFFFFFFFFFFBBB......................\n......................BBBFFFFFFFFFFFFFFBBB......................\n......................BBFFFFFFFFFFFFFFFBBB......................\n......................BBFFFFFFFFFFFFFFFFBB......................\n......................BBFFFFFFFFFFFFFFFFBB......................\n.....................BBBFFFFFFFFFFFFFFFFBBB.....................\n.....................BBBBBBBBBBBBBBBBBBBBBB.....................\n.....................BBBBBBBBBBBBBBBBBBBBBB.....................\n................................................................\n"
+      },
+      "capabilities": {
+        "gpu": "ANGLE (AMD, AMD Radeon 740M Graphics (0x00001901) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+        "depthBits": 24,
+        "clipControl": true,
+        "reversedEngaged": true,
+        "logDepth": false
+      }
+    },
+    "std": {
+      "mode": "depth",
+      "depth": "std",
+      "pairs": [
+        {
+          "d": 8,
+          "gap": 0.001,
+          "innerFrontFrac": 1,
+          "innerBackFrac": 0,
+          "annulusBackFrac": 0.9234167893961709,
+          "pass": true
+        },
+        {
+          "d": 5000,
+          "gap": 0.05,
+          "innerFrontFrac": 1,
+          "innerBackFrac": 0,
+          "annulusBackFrac": 1,
+          "pass": true
+        },
+        {
+          "d": 500000,
+          "gap": 2,
+          "innerFrontFrac": 0,
+          "innerBackFrac": 1,
+          "annulusBackFrac": 0.9234167893961709,
+          "pass": false
+        }
+      ],
+      "allPass": false,
+      "debug": {
+        "histogram": {
+          "sky": 1612,
+          "front": 231,
+          "back": 461,
+          "other": 0
+        },
+        "grid": "................................................................\n.....................BBBBBBBBBBBBBBBBBBBBBB.....................\n.....................BBBBBBBBBBBBBBBBBBBBBB.....................\n.....................BBBBBBBBBBBBBBBBBBBBBB.....................\n......................BBBBBBBBBBBBBBBBBBBB......................\n......................BBBBBBBBBBBBBBBBBBBB......................\n......................BBBBBBBBBBBBBBBBBBBB......................\n......................BBBBBBBBBBBBBBBBBBBB......................\n......................BBBBBBBBBBBBBBBBBBBB......................\n......................BBBBBBBBBBBBBBBBBBBB......................\n......................BBBBBBBBBBBBBBBBBBBB......................\n......................BBBBBBBBBBBBBBBBBBBB......................\n......................BBBBBBBBBBBBBBBBBBBB......................\n......................BBBBBBBBBBBBBBBBBBBB......................\n......................BBBFFFFFFFFFFFFFFBBB......................\n......................BBBFFFFFFFFFFFFFFBBB......................\n......................BBBFFFFFFFFFFFFFFBBB......................\n......................BBBFFFFFFFFFFFFFFBBB......................\n......................BBBFFFFFFFFFFFFFFBBB......................\n......................BBBFFFFFFFFFFFFFFBBB......................\n......................BBBFFFFFFFFFFFFFFBBB......................\n......................BBBFFFFFFFFFFFFFFBBB......................\n......................BBBBBBBBBBBBBBBBBBBB......................\n......................BBBBBBBBBBBBBBBBBBBB......................\n......................BBBBBBBBBBBBBBBBBBBB......................\n......................BBBFFFFFFFFFFFFFFBBB......................\n......................BBBFFFFFFFFFFFFFFBBB......................\n......................BBBFFFFFFFFFFFFFFBBB......................\n......................BBBFFFFFFFFFFFFFFBBB......................\n......................BBFFFFFFFFFFFFFFFBBB......................\n......................BBFFFFFFFFFFFFFFFFBB......................\n......................BBFFFFFFFFFFFFFFFFBB......................\n.....................BBBFFFFFFFFFFFFFFFFBBB.....................\n.....................BBBBBBBBBBBBBBBBBBBBBB.....................\n.....................BBBBBBBBBBBBBBBBBBBBBB.....................\n................................................................\n"
+      },
+      "capabilities": {
+        "gpu": "ANGLE (AMD, AMD Radeon 740M Graphics (0x00001901) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+        "depthBits": 24,
+        "clipControl": true,
+        "reversedEngaged": false,
+        "logDepth": false
+      }
+    }
+  },
+  "flights": {
+    "quadtree/log": {
+      "mode": "flight",
+      "scheme": "quadtree",
+      "depth": "log",
+      "frames": 2741,
+      "flightSeconds": 43.1906,
+      "meanMs": 15.757241882524596,
+      "p50Ms": 7,
+      "p95Ms": 7.100000000002183,
+      "p99Ms": 14.099999999998545,
+      "maxMs": 6727.7,
+      "fpsMean": 63.462883127347276,
+      "drawCallsMean": 2.3282275711159737,
+      "drawCallsMax": 37,
+      "trianglesMean": 1490.0656455142232,
+      "trianglesMax": 23680,
+      "leavesOrInstancesMean": 69.7519153593579,
+      "leavesOrInstancesMax": 1945,
+      "lodCpuMsMean": 7.908172199675873,
+      "transitionsMean": 3.944180955855527,
+      "geometryBytesMax": 88402368,
+      "geometryBytesAtMaxZoom": 88402368,
+      "renderTargetBytes": 0,
+      "vramTotalMax": 88402368,
+      "vramTotalAtMaxZoom": 88402368,
+      "instanceUploadBytesPerFrameMean": 0,
+      "silhouette": {
+        "captures": 4,
+        "maxResidualPx": 0,
+        "meanResidualPx": 0,
+        "invalidColumns": 192
+      },
+      "debugFrames": [
+        {
+          "tSec": 6.73,
+          "altM": 23.837016829733926,
+          "visible": 130,
+          "calls": 0,
+          "triangles": 0,
+          "visibleMeshes": 130,
+          "groupChildren": 4336,
+          "camPos": [
+            3592699.8232792513,
+            2184610.1049594874,
+            4786432.011525366
+          ],
+          "groupPos": [
+            -3592699.8232792513,
+            -2184610.1049594874,
+            -4786432.011525366
+          ],
+          "sampleMesh": {
+            "visible": true,
+            "frustumCulled": true,
+            "posW": [
+              4772889.390698082,
+              -596611.1738372602,
+              4176278.2168608215
+            ],
+            "matrixWorldW": [
+              1180189.5674188305,
+              -2781221.278796748,
+              -610153.794664545,
+              1
+            ],
+            "bsCenter": [
+              -33208.703125,
+              -28040,
+              -72227.921875
+            ],
+            "bsRadius": 778354.4687280986
+          }
+        },
+        {
+          "tSec": 20,
+          "altM": 1000000,
+          "visible": 42,
+          "calls": 3,
+          "triangles": 1920,
+          "visibleMeshes": 42,
+          "groupChildren": 4336,
+          "camPos": [
+            3384741.35812719,
+            2527499.738754132,
+            6040439.719853274
+          ],
+          "groupPos": [
+            -3384741.35812719,
+            -2527499.738754132,
+            -6040439.719853274
+          ],
+          "sampleMesh": {
+            "visible": true,
+            "frustumCulled": true,
+            "posW": [
+              4997209.558767276,
+              -1249302.389691819,
+              3747907.169075457
+            ],
+            "matrixWorldW": [
+              1612468.200640086,
+              -3776802.128445951,
+              -2292532.5507778167,
+              1
+            ],
+            "bsCenter": [
+              -74833.59375,
+              -51176.875,
+              -225881.5
+            ],
+            "bsRadius": 1682570.2272310238
+          }
+        },
+        {
+          "tSec": 43.19,
+          "altM": 1000,
+          "visible": 1323,
+          "calls": 1,
+          "triangles": 640,
+          "visibleMeshes": 1323,
+          "groupChildren": 4336,
+          "camPos": [
+            2191256.774790167,
+            2184944.8291061358,
+            5570170.001059083
+          ],
+          "groupPos": [
+            -2191256.774790167,
+            -2184944.8291061358,
+            -5570170.001059083
+          ],
+          "sampleMesh": {
+            "visible": true,
+            "frustumCulled": true,
+            "posW": [
+              4997209.558767276,
+              -1249302.389691819,
+              3747907.169075457
+            ],
+            "matrixWorldW": [
+              2805952.783977109,
+              -3434247.2187979547,
+              -1822262.8319836264,
+              1
+            ],
+            "bsCenter": [
+              -74833.59375,
+              -51176.875,
+              -225881.5
+            ],
+            "bsRadius": 1682570.2272310238
+          }
+        }
+      ],
+      "capabilities": {
+        "gpu": "ANGLE (AMD, AMD Radeon 740M Graphics (0x00001901) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+        "depthBits": 24,
+        "clipControl": true,
+        "reversedEngaged": false,
+        "logDepth": true
+      }
+    }
+  },
+  "derived": {
+    "depthVerdicts": {
+      "log": {
+        "allPass": true,
+        "pairs": [
+          {
+            "d": 8,
+            "gap": 0.001,
+            "innerFrontFrac": 1,
+            "innerBackFrac": 0,
+            "annulusBackFrac": 0.9234167893961709,
+            "pass": true
+          },
+          {
+            "d": 5000,
+            "gap": 0.05,
+            "innerFrontFrac": 1,
+            "innerBackFrac": 0,
+            "annulusBackFrac": 1,
+            "pass": true
+          },
+          {
+            "d": 500000,
+            "gap": 2,
+            "innerFrontFrac": 1,
+            "innerBackFrac": 0,
+            "annulusBackFrac": 0.9234167893961709,
+            "pass": true
+          }
+        ]
+      },
+      "revz": {
+        "allPass": true,
+        "pairs": [
+          {
+            "d": 8,
+            "gap": 0.001,
+            "innerFrontFrac": 1,
+            "innerBackFrac": 0,
+            "annulusBackFrac": 0.9234167893961709,
+            "pass": true
+          },
+          {
+            "d": 5000,
+            "gap": 0.05,
+            "innerFrontFrac": 1,
+            "innerBackFrac": 0,
+            "annulusBackFrac": 1,
+            "pass": true
+          },
+          {
+            "d": 500000,
+            "gap": 2,
+            "innerFrontFrac": 1,
+            "innerBackFrac": 0,
+            "annulusBackFrac": 0.9234167893961709,
+            "pass": true
+          }
+        ]
+      },
+      "revz-f32": {
+        "allPass": true,
+        "pairs": [
+          {
+            "d": 8,
+            "gap": 0.001,
+            "innerFrontFrac": 1,
+            "innerBackFrac": 0,
+            "annulusBackFrac": 0.9234167893961709,
+            "pass": true
+          },
+          {
+            "d": 5000,
+            "gap": 0.05,
+            "innerFrontFrac": 1,
+            "innerBackFrac": 0,
+            "annulusBackFrac": 1,
+            "pass": true
+          },
+          {
+            "d": 500000,
+            "gap": 2,
+            "innerFrontFrac": 1,
+            "innerBackFrac": 0,
+            "annulusBackFrac": 0.9234167893961709,
+            "pass": true
+          }
+        ]
+      },
+      "std": {
+        "allPass": false,
+        "pairs": [
+          {
+            "d": 8,
+            "gap": 0.001,
+            "innerFrontFrac": 1,
+            "innerBackFrac": 0,
+            "annulusBackFrac": 0.9234167893961709,
+            "pass": true
+          },
+          {
+            "d": 5000,
+            "gap": 0.05,
+            "innerFrontFrac": 1,
+            "innerBackFrac": 0,
+            "annulusBackFrac": 1,
+            "pass": true
+          },
+          {
+            "d": 500000,
+            "gap": 2,
+            "innerFrontFrac": 0,
+            "innerBackFrac": 1,
+            "annulusBackFrac": 0.9234167893961709,
+            "pass": false
+          }
+        ]
+      }
+    },
+    "flightKeys": [
+      "quadtree/log"
+    ]
+  }
+}

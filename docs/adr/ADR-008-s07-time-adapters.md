@@ -29,7 +29,7 @@ whole ΔT (measured in Evidence B).
 
 All values [MEASURED 2026-09-06, vitest probes + `report.json` under `tools/spikes/s0.7/`,
 methods recorded there per probe] unless tagged otherwise. 29 probe tests pass
-(`npx vitest run tools/spikes/s0.7`); a strict `tsc --noEmit` over the spike files is clean
+(`npx vitest run tests/engine/ttClock.test.ts` — the suite re-homed here per Decision 1); a strict `tsc --noEmit` over the spike files is clean
 (project flags + `resolveJsonModule` + `allowImportingTsExtensions`).
 
 **A — Leap table and known points (fills B-TIME-02).** The committed table

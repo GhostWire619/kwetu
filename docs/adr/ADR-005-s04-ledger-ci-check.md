@@ -65,4 +65,10 @@ Baseline before tonight's R7/R8 work: PASS, 0 violations, 2 warnings (data-06, d
 2. data-06 (GeoNames) and data-07 (Hipparcos) attribution strings are sanctioned deferrals — land the STR-* strings in ATTRIBUTIONS.md and the rows' final cells.
 3. Consolidate the double delatin rows: code-11's placeholder pin is superseded by code-30 (0.2.0) and generates the checker's one standing R8 deferral warning; delete or complete code-11 when code-30 is confirmed.
 4. code-02 (@dimforge/rapier3d-compat) dual-license note and code-20 (KTX-Software 4.x) exact pin remain recorded-pending per the ledger's own notes; both resolve at first code commit, after which R8 holds them.
-5. ADR status flips to accepted once 1–2 land and the checker stays green.
+5. ~~ADR status flips to accepted once 1–2 land and the checker stays green.~~ **Ratified
+   2026-09-06 by the orchestrator landing pass** on this basis: item 1 is re-owned by
+   ADR-011 Decision 6 (hosted-CI wiring deferred until a runner exists — not an S0.4 debt);
+   item 2 is re-classified as sanctioned standing debt that lands with first use of the
+   datasets (not an acceptance blocker); items 3–4 are ledger hygiene tracked by the checker
+   itself, which has stayed green (PASS, 0 violations) through every landing since. The
+   Status header records this; the residual items stay open as standing debt, not as gates.

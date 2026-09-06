@@ -98,7 +98,9 @@ mirror (`ts-mirror.mjs`) with identical f64 operation order. 9 vitest probe test
 
 ## Consequences
 
-Fills ROADMAP §Budgets **B-VAL-01** = 4.524e-5 m and **B-VAL-02** = 3.736e6 [MEASURED
+Fills ROADMAP §Budgets **B-VAL-01** = 4.524e-5 m and **B-VAL-02** = 3.736e6 **(dimensionless —
+tamper detection margin, i.e. 3.736e6× the legal drift; a 2026-09-06 audit relabeled the row
+and split the replay CPU cost into B-VAL-03)** [MEASURED
 2026-09-06, `tools/spikes/s0.6/report.json`]; Phase 4/5 gates reference these rows. The
 Go runtime's validator needs no WASM, no engine, no per-tick solver — measured at ~82 ns
 per tick in the container. Harder / locked out: **legitimate discontinuities will trip the
@@ -126,6 +128,10 @@ budget rows.
    probed; the speed hack alone cannot prove the heading channel trips.
 3. Sanctioned-discontinuity event design (crashes, lifts, teleports) so legitimate impacts
    are not rejected — Phase 4/5.
+4. ROADMAP §9's "Shared vehicle authority" matrix row names two evidence items this spike
+   did not produce (its synthetic capture covers neither): powered-flight recorded-input
+   replay, and forged thrust/fuel/stage/seat request rejection. Both are owed before that
+   matrix row can be accepted — owning gates Phase 4/5.
 4. Out-of-order, late and missing states, and snapshot/reconnect interaction with the
    replay window — Phase 5 (with S0.7's clock semantics).
 5. Cross-language bitwise agreement is measured for one host pair and one workload; CI

@@ -130,7 +130,7 @@ The checklist. Each item names the **owner** (the component or role that lands i
 
 ### 6. Cross-border
 
-- **D16 — Hosting region is S0.9's decision** (candidates probed from Dar/Zanzibar: eu-central, Cape Town, Nairobi), landing as the Phase 5 hosting ADR and re-tested at Phase 6 for voice. This ADR fixes only the transfer duties each candidate drags in:
+- **D16 — Hosting region is S0.9's decision** (candidates probed from Dar/Zanzibar: eu-central, Cape Town, Nairobi). Timing per ADR-013's 2026-09-06 re-gate: the probes and the hosting decision move to the pass that precedes the Alpha gate (always before the first paid hosting commitment), NOT to Phase 5 — Phase 5–6 build and test against the assumption-under-test envelope, not against measured B-RTT/B-COST rows. This ADR fixes only the transfer duties each candidate drags in:
   - **eu-central**: all PII at rest in the EU; East African players' data flows out of their region under TZ s. 31/32 or KE s. 48/49 (necessity/adequacy/safeguards tests — the EU is not on any published TZ adequacy list tonight and the EU list has no African countries). Flows back toward East Africa (operator/CI/admin access, offsite backups) are EU exports needing a Chapter V mechanism — standard contractual clauses, since no adequacy exists — plus the Art. 27 representative if EU players are accepted.
   - **Nairobi**: PII in Kenya directly engages KE s. 50 (server-in-Kenya processing) and Kenyan registration/breach duties most strongly; outbound transfers still need s. 48/49 analysis.
   - **Cape Town**: South Africa's POPIA applies and is out of this ADR's three-frame scope — record it as a per-frame addendum before that region could be chosen.

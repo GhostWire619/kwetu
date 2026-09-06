@@ -43,9 +43,9 @@ gzipped as served. Rapier figures reproduce the 2026-09-05 baseline **byte-ident
 | B-LOAD-04 | livekit-client 2.22.2 (Room + the track surface the positional-voice path imports, with RemoteAudioTrack used as a value so it cannot tree-shake away) | 131,745 | [MEASURED 2026-09-06, tools/spikes/s0.3/measure.mjs — vite 8.2.2 minified prod import, zlib gzipSync level 9; optional E2EE worker excluded — it is a consumer-provided Worker (livekit-client/e2ee-worker subpath), shipped file 292,384 B raw / 68,605 B gzip9 [MEASURED 2026-09-06, report.json staticAssets]] |
 | B-LOAD-05 | KTX2 / Basis transcoder pair as shipped in three 0.185.1 (basis_transcoder.js 15,143 + basis_transcoder.wasm 247,535) | 262,678 | [MEASURED 2026-09-06, tools/spikes/s0.3/measure.mjs — the two files as shipped, zlib gzipSync level 9 each; runtime-fetched by KTX2Loader.setTranscoderPath(), never bundled] |
 | B-LOAD-06 | meshopt decoder — three ships `examples/jsm/libs/meshopt_decoder.module.js` with the WASM payload **embedded in the JS** (meshoptimizer's own string encoding); **no separate .wasm accompanies it in the shipping path** (verified: the only .wasm files under examples/jsm/libs are basis/ and draco/) | 7,804 as shipped; 7,231 bundled+minified | [MEASURED 2026-09-06, tools/spikes/s0.3/measure.mjs — shipped file gzipped; bundled figure via a vite 8.2.2 entry that consumes the decoder; zlib gzipSync level 9] |
-| B-LOAD-07 | App shell — strict exclusive figure per the tasked derivation (see Decision 4 for what it still carries) | 1,216,417 derived; direct strict-shell build cross-check 1,215,356 (delta −1,061) | [MEASURED 2026-09-06, derived subtraction: 2026-09-05 shell 1,249,242 − astronomy-engine 19,257 − i18next 13,568; cross-checked by a direct vite 8.2.2 build of the shell-minus-both entry; zlib gzipSync level 9 — the subtraction is a derivation, not an independent re-measurement, and both figures are recorded] |
+| B-LOAD-07 | App shell — strict exclusive figure per the tasked derivation (see Decision 4 for what it still carries) | 1,216,417 derived; direct strict-shell build cross-check 1,215,356 (delta −1,061) | [DERIVED 2026-09-06, subtraction: 2026-09-05 shell 1,249,242 [MEASURED] − astronomy-engine 19,257 [MEASURED] − i18next 13,568 [MEASURED]; cross-checked by a direct vite 8.2.2 build of the shell-minus-both entry [MEASURED 1,215,356]; zlib gzipSync level 9 — the headline figure is a derivation anchored on directly measured builds, and both figures are recorded] |
 | B-LOAD-08 | One locale bundle (locales load lazily per docs/swahili-i18n.md): 112-key app namespace, EN + sw with identical key sets | sw 1,346; EN 1,210 (compact-JSON variants 1,329 / 1,192) | [MEASURED 2026-09-06, tools/spikes/s0.3/measure.mjs — authored JSON as served, zlib gzipSync level 9; representative fixture — the real key namespace is owned by docs/swahili-i18n.md (S0.10)] |
-| B-LOAD-09 | **Total first-visit transfer** — provisional derived sum, inclusion list in Decision 5 | 1,665,025 (≈ 1.59 MiB) | [MEASURED 2026-09-06, derived sum over the stated inclusion list; every component individually measured, zlib gzipSync level 9; anchored on the single-stream `fullshell` build 1,401,137 B — not an end-to-end transfer measurement] |
+| B-LOAD-09 | **Total first-visit transfer** — provisional derived sum, inclusion list in Decision 5 | 1,665,025 (≈ 1.59 MiB) | [DERIVED 2026-09-06, sum over the stated inclusion list; every component individually [MEASURED], zlib gzipSync level 9; anchored on the single-stream `fullshell` build 1,401,137 B [MEASURED] — not an end-to-end transfer measurement] |
 | B-LOAD-10 | Warm re-visit transfer (Cache API / IndexedDB hit, `navigator.storage.persist()` granted) | — | [PLACEHOLDER — gate: needs real CDN warm measurement] |
 
 **Rapier shipping arithmetic** [MEASURED 2026-09-06, tools/spikes/s0.3/report.json
@@ -133,10 +133,12 @@ carries the meshopt decoder module but not KTX2Loader.
 ## Consequences
 
 Fills ROADMAP §Budgets **B-LOAD-03…06, B-LOAD-08** (measured), **B-LOAD-07** (derived, composition
-stated), **B-LOAD-09** (provisional derived sum, inclusion list stated); **B-LOAD-10 remains
-empty**, so S0.3's exit criterion ("every row in §3.1 carries a `[MEASURED]` figure") is not
-fully met and this ADR is `proposed` — B-LOAD-10 needs its re-gate decision or a genuine warm
-probe. Adds proposed rows **B-LOAD-12/13** for astronomy-engine and i18next. Locks in: the
+stated), **B-LOAD-09** (provisional derived sum, inclusion list stated), and lands **B-LOAD-12/13**
+(astronomy-engine, i18next) as rows in ROADMAP §3.1. **B-LOAD-10** stays a placeholder: the
+orchestrator ratification (2026-09-06, recorded in ROADMAP §7.1) re-gated it to Phase 1 — the
+"shell transfer recorded" Phase-1 exit item consumes it — which satisfies S0.3's exit criterion
+together with Decision 1's withdrawal of the informal 3–5 MB claim. Open item: the Phase-1
+production build confirms the compat-Rapier shipping choice with a real shell measurement. Locks in: the
 load-budget accounting method (per-package gzip9 + explicit inclusion lists; single-stream bundle
 builds as the anti-double-counting anchor); the compat Rapier shipping choice for Phase 1 with
 its ≈ 316 KB gross / ≈ 287 KB net price on record; and the consume-pure-exports bundling rule

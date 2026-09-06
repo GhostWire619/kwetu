@@ -14,6 +14,11 @@
     // second table (client/src/engine/leap-seconds.json) with an import
     // attribute — promoted from the S0.7 spike per ADR-008.
     "resolveJsonModule": true,
+    // tools/spikes/s0.7/writeReport.ts runs under Node's native TS runner,
+    // which requires explicit .ts extension specifiers; the spike harness
+    // crossCheck.ts (typechecked here via tests/engine/ttClock.test.ts) keeps
+    // that style for its engine import. noEmit is set, so this is sound.
+    "allowImportingTsExtensions": true,
     // Skips error-checking of .d.ts internals only — our own code stays
     // fully checked. Needed at scaffold time: vite 8.2.2 / vitest 5.0.0
     // ship mutually incompatible declaration internals, and vitest 5.0.0's

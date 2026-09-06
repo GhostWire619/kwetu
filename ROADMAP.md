@@ -59,7 +59,7 @@ starts only when the previous gate passes and no §Budgets row it depends on is 
 
 | Phase | Goal | Exit criterion (one human, in a browser) |
 |---|---|---|
-| 0 — Spikes | 12 ADRs + measurements, no feature code | All 12 ADRs merged; §Budgets has no empty `[PLACEHOLDER]` rows gating Phase 1+ |
+| 0 — Spikes | 12 ADRs + measurements, no feature code | Each of S0.1–S0.12 has its ADR merged (13 files: ADR-001 baseline + 12 spikes — enumerated, not counted); §Budgets has no empty `[PLACEHOLDER]` rows gating Phase 1+ |
 | 1 — Engine core | Precision + rendering in empty world | Camera flies 1 m → 1e10 m in Chrome + Firefox: no jitter, no z-fighting; shell transfer recorded |
 | 2 — Earth data | DSM/Zanzibar baked + streamed | Player loads Dar es Salaam: OSM basemap + terrain + buildings streamed over range requests; payload + bake times recorded |
 | 3 — Walk | Character on real ground, single-player | Walk Stone Town seafront inland on the dev box and the defined integrated-GPU baseline, with the frame rate recorded into B-FPS-01 tier B; position persists across reload |
@@ -95,9 +95,9 @@ measured.
 | B-LOAD-04 | livekit-client | 131,745 B (E2EE worker excluded; its 68,605 B gzip9 build recorded separately in ADR-004) | [MEASURED 2026-09-06, tools/spikes/s0.3/measure.mjs] |
 | B-LOAD-05 | KTX2 / Basis transcoder (WASM + JS) | 262,678 B | [MEASURED 2026-09-06, tools/spikes/s0.3/measure.mjs] |
 | B-LOAD-06 | meshopt decoder (WASM + JS) | 7,804 B as shipped (7,231 B when bundled) | [MEASURED 2026-09-06, tools/spikes/s0.3/measure.mjs] |
-| B-LOAD-07 | App shell composition — definition revised 2026-09-06 (§7): the probed figure includes three + Rapier compat + B-LOAD-12/13; the pure app-TS+CSS-only figure moves to Phase 1 with the real build | 1,216,417 B derived (cross-check direct build 1,215,356 B; composition = B-LOAD-01 + B-LOAD-02 + B-LOAD-12 + B-LOAD-13 + app code) | [MEASURED 2026-09-06, derived subtraction + direct-build cross-check, tools/spikes/s0.3/report.json] |
+| B-LOAD-07 | App shell composition — definition revised 2026-09-06 (§7): the probed figure includes three + Rapier compat + B-LOAD-12/13; the pure app-TS+CSS-only figure moves to Phase 1 with the real build | 1,216,417 B derived (cross-check direct build 1,215,356 B; composition = B-LOAD-01 + B-LOAD-02 + B-LOAD-12 + B-LOAD-13 + app code) | [DERIVED 2026-09-06, subtraction anchored on [MEASURED] builds (shell 1,249,242 − astronomy-engine 19,257 − i18next 13,568) + direct-build cross-check [MEASURED 1,215,356], tools/spikes/s0.3/report.json] |
 | B-LOAD-08 | One locale bundle (EN or sw JSON; locales load lazily per docs/swahili-i18n.md) | sw 1,346 / EN 1,210 (112-key spike fixture; production namespace re-measure at Phase 1) | [MEASURED 2026-09-06, tools/spikes/s0.3/measure.mjs] |
-| B-LOAD-09 | **Total first-visit transfer** — method revised 2026-09-06 (§7): ADR-004 inclusion list (shell 1,401,137 + Basis transcoder 262,678 + EN locale 1,210), NOT a naive sum of rows 01–08 (which would double-count) | 1,665,025 B provisional | [MEASURED 2026-09-06, derived sum over stated inclusion list] |
+| B-LOAD-09 | **Total first-visit transfer** — method revised 2026-09-06 (§7): ADR-004 inclusion list (shell 1,401,137 + Basis transcoder 262,678 + EN locale 1,210), NOT a naive sum of rows 01–08 (which would double-count) | 1,665,025 B provisional | [DERIVED 2026-09-06, sum over stated inclusion list; every component individually [MEASURED]] |
 | B-LOAD-10 | Warm re-visit transfer (Cache API / IndexedDB hit, `navigator.storage.persist()` granted) | — | [PLACEHOLDER — gate: Phase 1 (re-gated from S0.3 per ADR-004 — static probe cannot observe cache behaviour; §7)] |
 | B-LOAD-12 | astronomy-engine | 19,257 B (inside B-LOAD-07 composition; not additive) | [MEASURED 2026-09-06, tools/spikes/s0.3/measure.mjs] |
 | B-LOAD-13 | i18next | 13,568 B (inside B-LOAD-07 composition; not additive) | [MEASURED 2026-09-06, tools/spikes/s0.3/measure.mjs] |
@@ -266,7 +266,8 @@ drift thresholds; production thresholds + clamps remain Phase-4 proposals.
 | ID | Quantity | Value | Tag |
 |---|---|---|---|
 | B-VAL-01 | Kinematic-replay position drift vs recorded car path over a full synthetic session (max; p50 2.92e-5 / p95 4.12e-5 / p99 4.36e-5 m) | 4.524e-5 m | [MEASURED 2026-09-06, tools/spikes/s0.6/report.json] |
-| B-VAL-02 | Validator replay CPU cost (ticks/s) — Go 81.92 ns/tick, TS 140.7/149.8 ns/tick | 3,735,928 ticks/s (Go, single core) | [MEASURED 2026-09-06, tools/spikes/s0.6/report.json] |
+| B-VAL-02 | Tamper detection margin (dimensionless): tampered max replay drift ÷ legal max replay drift | 3,735,928× (tampered 169.018 m vs legal 4.524e-5 m) | [MEASURED 2026-09-06, tools/spikes/s0.6/report.json — relabeled 2026-09-06 audit: the row had mislabeled this dimensionless margin as a ticks/s cost] |
+| B-VAL-03 | Validator replay CPU cost — per-tick replay step time | Go 81.92 ns/tick (≈ 12.2M ticks/s, single core); TS 140.7/149.8 ns/tick | [MEASURED 2026-09-06, tools/spikes/s0.6/report.json — 2000 repeats in golang:1.24-alpine + TS mirror; added 2026-09-06 audit so B-VAL-02's margin and the CPU cost stop sharing a row] |
 
 ### 3.12 UI & i18n runtime — gate S0.10 (measured 2026-09-06; ADR-010)
 
@@ -286,7 +287,7 @@ Exit criteria are quoted verbatim from §2. "Spikes consumed" names the Phase-0 
 
 - **Goal**: 12 ADRs + measurements, no feature code.
 - **Deliverables**: the 12 spike ADRs of §5; every §Budgets row gated at S0.x filled or formally withdrawn; the license ledger with CI check; the trademark search record; the privacy data map; committed golden ephemeris fixtures. Zero feature code.
-- **Exit criterion**: All 12 ADRs merged; §Budgets has no empty `[PLACEHOLDER]` rows gating Phase 1+
+- **Exit criterion**: Each of S0.1–S0.12 has its ADR merged (13 files: ADR-001 baseline + 12 spikes — enumerated, not counted; while S0.2's ADR-003 is reserved, Phase 0 cannot close); §Budgets has no empty `[PLACEHOLDER]` rows gating Phase 1+
 - **Spikes consumed**: none — Phase 0 produces all of S0.1–S0.12.
 - **Decisions produced**: one ADR per spike (§5).
 
@@ -325,18 +326,18 @@ Exit criteria are quoted verbatim from §2. "Spikes consumed" names the Phase-0 
 ### Phase 5 — Multiplayer
 
 - **Goal**: 2+ players, server-authoritative.
-- **Deliverables**: Go-runtime match handlers doing authoritative validation by versioned analytic coast, numerical powered flight and contact-kinematic replay with drift thresholds (no full server contact solver by design); prediction/interpolation tuned to the measured B-RTT rows; the Go AoI cell grid sized by the B-AOI rows; hosting region chosen from B-RTT/B-COST; explicit match snapshots for crash-resume (Nakama match state is in-memory, never auto-persisted); reconnect/rejoin recovery including the Caddy-reload WebSocket path.
+- **Deliverables**: Go-runtime match handlers doing authoritative validation by versioned analytic coast, numerical powered flight and contact-kinematic replay with drift thresholds (no full server contact solver by design); prediction/interpolation tuned to the assumption-under-test envelope (5–10 Mbps, high-RTT East African links — PROJECT_VISION hardware envelope; S0.9's B-RTT/B-COST rows are re-gated to the pre-Alpha hosting pass per ADR-013, not consumable here); the Go AoI cell grid sized by the B-AOI rows; explicit match snapshots for crash-resume (Nakama match state is in-memory, never auto-persisted); reconnect/rejoin recovery including the Caddy-reload WebSocket path.
 - **Exit criterion**: Two browsers see each other interpolated; unvalidated positions rejected (drift measured); mid-session reconnect recovers
-- **Spikes consumed**: S0.6 (validation contract), S0.8 (AoI sizing), S0.9 (region + cost).
-- **Decisions produced**: ADR hosting region; ADR AoI cell size adopted; ADR drift thresholds; ADR snapshot/reconnect policy.
+- **Spikes consumed**: S0.6 (validation contract), S0.8 (AoI sizing).
+- **Decisions produced**: ADR AoI cell size adopted; ADR drift thresholds; ADR snapshot/reconnect policy.
 
 ### Phase 6 — Voice
 
 - **Goal**: Proximity voice behind CGNAT.
 - **Deliverables**: self-hosted LiveKit with the Go runtime minting HS256 JWTs carrying room grants over RPC (no third-party Nakama-LiveKit plugin — the circulating URL is debunked); embedded LiveKit TURN with a real domain + CA cert (self-signed does not work); spatialization via RemoteAudioTrack WebAudio plugins into a PannerNode chain on the one shared AudioContext; Room.startAudio() inside a user gesture; speech preset + DTX; server-side RoomService mute only; proximity via subscription culling (fills B-AOI-04); push-to-talk default per B-CONST-07.
 - **Exit criterion**: Positional hearing w/ attenuation; TURN-forced connection succeeds; server mute not bypassable
-- **Spikes consumed**: S0.9 (TURN placement), S0.12 (voice policy).
-- **Decisions produced**: ADR TURN topology (embedded vs coturn — coturn only if the 443 conflict is unsolvable); ADR voice consent/recording policy from S0.12; ADR proximity-culling parameters (measured).
+- **Spikes consumed**: S0.12 (voice policy). (S0.9 TURN placement is re-gated to the pre-Alpha hosting pass per ADR-013; until then embedded LiveKit TURN with a real domain + CA cert remains the standing plan.)
+- **Decisions produced**: ADR TURN topology *preliminary* (embedded vs coturn — coturn only if the 443 conflict is unsolvable; finalized at the hosting pass); ADR voice consent/recording policy from S0.12; ADR proximity-culling parameters (measured).
 
 ### Phase 7 — Rocket
 
@@ -428,7 +429,7 @@ Each spike lands exactly one ADR in docs/adr/ and either fills its named §Budge
 
 - **Question**: can a Go-runtime validator accept or reject client positions without full physics, and with how much drift?
 - **Exit criterion**: an ADR plus the written validator contract — a recorded car path replayed against the closed-form kinematic model, the drift distribution measured and recorded, and an explicit statement of what the server will NOT do (no server-side Rapier). NETWORKING.md must not promise server-authoritative physics beyond this contract.
-- **Fills Budgets rows**: B-VAL-01, B-VAL-02 (created in §3.11a at ADR-007 landing; previously "the drift figures, recorded in the ADR").
+- **Fills Budgets rows**: B-VAL-01, B-VAL-02, B-VAL-03 (created in §3.11a at ADR-007 landing; previously "the drift figures, recorded in the ADR").
 
 ### S0.7 — Time-warp / universe-clock semantics
 
@@ -528,6 +529,19 @@ recorded in the phase's gate entry and not listed here.
   the row.** B-EPH-01 stays Phase-7-gated (our propagator vs fixtures); the
   astronomy-engine-vs-skyfield residual (0.345 arcmin Moon / 46.3 km) lives in
   ADR-011 and the golden fixture. Landing decision by the orchestrator.
+- **2026-09-06 — S0.7 SOI-handoff design re-gated to the Phase-7 ADR.** S0.7's exit
+  criterion had two halves; the TT-clock/leap-table/warp half is measured and closed,
+  the SOI-handoff algorithm half is deferred to the Phase-7 orbital work where the
+  handoff has real consumers. Recording ADR: ADR-008 (status line).
+- **2026-09-06 — S0.11 hosted-CI wiring deferred until a runner exists.** The npm
+  scripts and runner-agnostic commands land now; the CI yaml lands when the hosted
+  runner does. Recording ADR: ADR-011 (Decision 6).
+- **2026-09-06 — S0.1 seed re-homing recorded: target `tests/engine/`, not
+  `tests/golden/`.** The G-01/G-02 seeds are CI-enforced as
+  frames/precision/geodesy/localScene suites under `tests/engine/`; `tools/spikes/s0.1/`
+  is retained until the overlapping coverage is reconciled (deletion is a separate
+  decision, not automatic). Recording ADRs: ADR-011 (Consequences, amended) + ADR-002
+  (deletion condition).
 
 ## 8. Development environment & tooling
 
