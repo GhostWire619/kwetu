@@ -68,3 +68,22 @@ checks them.
   orbits — three renderer-independent modules in parallel (adversarial verify +
   fix rounds), write paths disjoint from the still-running Phase-0 spike workflow.
   Renderer (Part B) waits on the S0.2 outcome per night plan.
+
+## 05:25 — ttClock promoted; Part B renderer launched
+- **d86cdff**: ADR-008 open item closed — ttClock.ts + leap-seconds.json + test suite
+  promoted to `client/src/engine/` / `tests/engine/` (content unchanged; spike dir keeps
+  crossCheck + report writer; report.json untouched as the point-in-time record).
+  tsconfig gains `resolveJsonModule` for the JSON import attribute. Gates: typecheck clean,
+  29/29 clock tests, ledger PASS.
+- **Part B renderer workflow launched** (bootstrap + log-depth/floating-origin camera rig,
+  fly.pw.ts 1 m → 1e10 m in Chromium+Firefox, B-LOAD-09 built-shell measurement). Launched
+  now rather than waiting on ADR-003: the exit-criterion flight does not depend on the
+  planet-LOD mesh strategy; placeholder visuals are tagged [PLACEHOLDER — ADR-003].
+- **Multiplayer/voice groundwork workflow launched** (ADR-007/ADR-009 landed → unblocked):
+  Nakama Go runtime (match handler 20 Hz, AoI port with parity tests vs tools/spikes/s0.8,
+  validator per ADR-007, healthcheck/world_time/voice_token RPCs, built in golang:1.24-alpine,
+  plugin load verified in the live stack) + client net/voice modules (socket wrapper with
+  transport seam, snapshot interpolation buffer, LiveKit voice client with the single-
+  shared-AudioContext rule + push-to-talk default).
+- Four workflows in flight: Night B (S0.2 measurement + ADR-003), groundwork
+  (walk/vehicle/orbits), multiplayer/voice groundwork, Part B renderer.
