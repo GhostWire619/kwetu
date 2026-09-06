@@ -28,9 +28,19 @@ import * as THREE from 'three';
 import { ecefToEnu, EARTH_MEAN_RADIUS_METRES } from '../engine/geodesy';
 import { f32Downcast } from '../engine/precision';
 import { UniverseClock } from '../engine/ttClock';
+import { RegionTerrain } from '../region/terrainTile';
 import { CameraRig, KEY_TO_FLIGHT_ACTION } from './cameraRig';
 import { CelestialBodies } from './celestialBodies';
-import type { CanvasReadback, DepthProbe, FlightInput, KwetuDebug, KwetuRenderInfo } from './debugTypes';
+import type { CanvasReadback, DepthProbe, FlightInput, KwetuDebug, KwetuRegionDebug, KwetuRenderInfo } from './debugTypes';
+
+/** Boot altitude at a streamed region: above the tile's 130 m max height. */
+const REGION_BOOT_ALTITUDE_METRES = 300;
+
+/** Optional shell boot configuration (main.ts fills it from the URL). */
+export interface ClientAppOptions {
+  /** Region terrain manifest URL to stream + mount ([PLACEHOLDER — ADR-003] mount). */
+  readonly regionManifestUrl?: string;
+}
 
 /** Near plane, metres: 10 cm at the walk scale the shell boots into. */
 const CAMERA_NEAR_METRES = 0.1;
@@ -61,7 +71,10 @@ export class ClientApp {
   private readonly camera: THREE.PerspectiveCamera;
   private readonly rig: CameraRig;
   private readonly bodies: CelestialBodies;
+  private readonly region: RegionTerrain | null;
   private readonly clock: UniverseClock;
+  /** Set once the camera has been snapped to a streamed region's anchor. */
+  private regionBootApplied = false;
   private readonly bootMonoMs: number;
   private simElapsedMs = 0;
   private frameCount = 0;
@@ -126,7 +139,7 @@ export class ClientApp {
     this.render();
   };
 
-  constructor(canvas: HTMLCanvasElement) {
+  constructor(canvas: HTMLCanvasElement, options: ClientAppOptions = {}) {
     // Law R-1: log depth is switched on here; the floating origin is the rig.
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: false, logarithmicDepthBuffer: true });
     this.renderer.setPixelRatio(window.devicePixelRatio);
@@ -139,6 +152,16 @@ export class ClientApp {
     this.rig = new CameraRig(EARTH_MEAN_RADIUS_METRES, 1);
     this.bodies = new CelestialBodies(EARTH_MEAN_RADIUS_METRES);
     this.scene.add(this.bodies.group);
+
+    // Region streaming (Phase 2): load is async; the group stays invisible
+    // until ready, and the camera snaps to the region anchor once it is.
+    const regionUrl = options.regionManifestUrl;
+    this.region = regionUrl === undefined ? null : new RegionTerrain({ manifestUrl: regionUrl, sphereRadiusMetres: EARTH_MEAN_RADIUS_METRES });
+    if (this.region !== null) {
+      this.region.group.visible = false;
+      this.scene.add(this.region.group);
+      void this.region.load();
+    }
 
     // ADR-001 D3 / §4: the UniverseClock anchors TT once from the wall clock,
     // then derives every reading from the monotonic source — here the source
@@ -169,6 +192,24 @@ export class ClientApp {
     this.rig.tick(dtSeconds);
     this.applyCamera();
     this.bodies.update(this.clock.nowTt(), this.rig.anchorGeodetic);
+    this.region?.update(this.rig.anchorGeodetic);
+    this.maybeBootToRegion();
+  }
+
+  /**
+   * Snaps the camera to the region anchor the first time the tile is ready
+   * (debug/lambda seam: no region, no snap — human input drives everything
+   * else; the e2e relies on this boot).
+   */
+  private maybeBootToRegion(): void {
+    const region = this.region;
+    if (region === null || region.state !== 'ready' || this.regionBootApplied || this.disposed) return;
+    this.regionBootApplied = true;
+    const anchor = region.tileAnchorGeodetic;
+    this.rig.setCameraSite(anchor.latitudeDeg, anchor.longitudeDeg, REGION_BOOT_ALTITUDE_METRES);
+    this.applyCamera();
+    this.bodies.update(this.clock.nowTt(), this.rig.anchorGeodetic);
+    region.update(this.rig.anchorGeodetic);
   }
 
   private syncKeyInput(): void {
@@ -443,6 +484,22 @@ export class ClientApp {
       get renderInfo() {
         return app.snapshotRenderInfo();
       },
+      get region(): KwetuRegionDebug | null {
+        const region = app.region;
+        if (region === null) return null;
+        const anchor = region.tileAnchorOrNull();
+        return {
+          state: region.state,
+          bytesReceived: region.bytesReceived,
+          vertexCount: region.vertexCount,
+          triangleCount: region.triangleCount,
+          anchor:
+            anchor === null
+              ? { latitudeDeg: '0', longitudeDeg: '0' }
+              : { latitudeDeg: String(anchor.latitudeDeg), longitudeDeg: String(anchor.longitudeDeg) },
+          error: region.error,
+        };
+      },
       projectPoint: (worldPlanetFixed: readonly [number, number, number]) => {
         if (worldPlanetFixed.length !== 3) throw new Error('projectPoint: expected [x, y, z]');
         const x = worldPlanetFixed[0] ?? NaN;
@@ -468,6 +525,12 @@ export class ClientApp {
         app.rig.setCameraAltitude(altitudeAboveSphereMetres);
         app.applyCamera();
         app.bodies.update(app.clock.nowTt(), app.rig.anchorGeodetic);
+      },
+      setCameraSite: (latitudeDeg: number, longitudeDeg: number, altitudeAboveSphereMetres: number): void => {
+        app.rig.setCameraSite(latitudeDeg, longitudeDeg, altitudeAboveSphereMetres);
+        app.applyCamera();
+        app.bodies.update(app.clock.nowTt(), app.rig.anchorGeodetic);
+        app.region?.update(app.rig.anchorGeodetic);
       },
       setSpeed: (metresPerSecond: number): void => {
         app.rig.setSpeed(metresPerSecond);

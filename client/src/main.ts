@@ -39,10 +39,35 @@ function showRendererFailure(error: unknown): void {
   console.error('kwetu bootstrap: renderer construction failed', error);
 }
 
-function boot(canvas: HTMLCanvasElement): void {
+async function boot(canvas: HTMLCanvasElement): Promise<void> {
+  const mode = new URLSearchParams(window.location.search).get('mode');
+  if (mode === 'surface') {
+    try {
+      // Keep the large Rapier surface bundle out of the lightweight space
+      // diagnostic; it is fetched only when the player selects surface mode.
+      const { SurfaceApp } = await import('./play/surfaceApp');
+      const surface = await SurfaceApp.create(canvas);
+      surface.start();
+    } catch (error) {
+      showRendererFailure(error);
+    }
+    return;
+  }
+  // Phase 2: ?region=<name> streams that region's terrain tile into the
+  // shell. The name is restricted to the bake's naming alphabet — it becomes
+  // part of a URL path only (the server re-validates its own side).
+  const regionParam = new URLSearchParams(window.location.search).get('region');
+  let regionManifestUrl: string | undefined;
+  if (regionParam !== null) {
+    if (/^[a-z0-9][a-z0-9-]*$/.test(regionParam)) {
+      regionManifestUrl = `/data/region/${regionParam}.terrain.manifest.json`;
+    } else {
+      console.warn(`kwetu bootstrap: ignoring malformed ?region value "${regionParam}"`);
+    }
+  }
   let app: ClientApp;
   try {
-    app = new ClientApp(canvas);
+    app = new ClientApp(canvas, regionManifestUrl === undefined ? {} : { regionManifestUrl });
   } catch (error) {
     showRendererFailure(error);
     return;
@@ -50,4 +75,4 @@ function boot(canvas: HTMLCanvasElement): void {
   app.start();
 }
 
-boot(canvas);
+void boot(canvas);

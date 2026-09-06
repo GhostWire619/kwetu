@@ -67,6 +67,22 @@ export interface FlightInput {
   down?: boolean;
 }
 
+/** The streamed region terrain tile's debug snapshot (null when none loaded). */
+export interface KwetuRegionDebug {
+  readonly state: 'idle' | 'loading' | 'ready' | 'error';
+  /** Total manifest + GLB bytes fetched so far. */
+  readonly bytesReceived: number;
+  /** Decoded mesh counts (0 until ready) — validated against the manifest. */
+  readonly vertexCount: number;
+  readonly triangleCount: number;
+  /** The tile anchor from the manifest (f64 strings). */
+  readonly anchor: {
+    readonly latitudeDeg: string;
+    readonly longitudeDeg: string;
+  };
+  readonly error: string | null;
+}
+
 /** The complete debug/e2e surface. */
 export interface KwetuDebug {
   /** Rendered frame count (monotonic; advances only on real renders). */
@@ -87,6 +103,8 @@ export interface KwetuDebug {
   readonly surfacePoint: DebugF64Vec3;
   /** renderer.info.render snapshot after the most recent render. */
   readonly renderInfo: KwetuRenderInfo;
+  /** The streamed region tile's state (null when the shell booted without one). */
+  readonly region: KwetuRegionDebug | null;
   /** Projects a canonical PlanetFixed point to CSS pixels through the live camera. */
   projectPoint(worldPlanetFixed: readonly [number, number, number]): ProjectedPoint;
   /**
@@ -96,6 +114,12 @@ export interface KwetuDebug {
    * flight is the input/speed path.
    */
   setCameraAltitude(altitudeAboveSphereMetres: number): void;
+  /**
+   * Teleports to an arbitrary geodetic site at an altitude above the
+   * placeholder sphere — the same canonical re-derivation, generalized
+   * beyond the boot site's radial.
+   */
+  setCameraSite(latitudeDeg: number, longitudeDeg: number, altitudeAboveSphereMetres: number): void;
   /** Sets the flight speed (m/s) through the same clamp the mouse wheel uses. */
   setSpeed(metresPerSecond: number): void;
   /** Replaces the debug flight input (the keyboard ORs into the same struct). */

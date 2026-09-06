@@ -211,18 +211,29 @@ export class CameraRig {
   }
 
   /**
-   * Teleports the camera along the boot site's geocentric radial by canonical
-   * re-derivation (Law P-6): cameraPf is recomputed from f64 ground truth and
-   * the anchor re-derived from it. Never a shift of accumulated state.
+   * Teleports the camera to an arbitrary geodetic site at an altitude above
+   * the placeholder sphere, by canonical re-derivation (Law P-6): cameraPf is
+   * recomputed from f64 ground truth and the anchor re-derived from it. Never
+   * a shift of accumulated state. The geodetic lat/lon is used directly as
+   * the radial DIRECTION (the same placeholder-sphere convention as the boot
+   * site and the region tile mount — see the header note).
    * Note: `ecefToGeodetic` is validated to +-80 deg lat, |h| <= 1e6 m
    * (geodesy.ts); beyond that the shell relies only on its self-consistent
    * round trip (anchorEcef ~= cameraPf, so camera-local ~= 0), never on
    * survey-grade values (Law G-3 keeps those in planet-fixed geodetic state).
    */
-  setCameraAltitude(altitudeAboveSphereMetres: number): void {
-    if (!Number.isFinite(altitudeAboveSphereMetres)) return;
-    this.cameraPf = scaleV(this.siteRadial, this.sphereRadiusMetres + altitudeAboveSphereMetres);
+  setCameraSite(latitudeDeg: number, longitudeDeg: number, altitudeAboveSphereMetres: number): void {
+    if (!Number.isFinite(latitudeDeg) || !Number.isFinite(longitudeDeg) || !Number.isFinite(altitudeAboveSphereMetres)) return;
+    const phi = (latitudeDeg * Math.PI) / 180;
+    const lam = (longitudeDeg * Math.PI) / 180;
+    const radial: Vec3 = { x: Math.cos(phi) * Math.cos(lam), y: Math.cos(phi) * Math.sin(lam), z: Math.sin(phi) };
+    this.cameraPf = scaleV(radial, this.sphereRadiusMetres + altitudeAboveSphereMetres);
     this.anchor = ecefToGeodetic(this.cameraPf);
+  }
+
+  /** Teleports along the boot site's radial — {@link setCameraSite} at the boot site. */
+  setCameraAltitude(altitudeAboveSphereMetres: number): void {
+    this.setCameraSite(SITE_LATITUDE_DEG, SITE_LONGITUDE_DEG, altitudeAboveSphereMetres);
   }
 
   // --- per-tick integration ----------------------------------------------------------

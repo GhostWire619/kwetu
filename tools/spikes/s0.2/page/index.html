@@ -1,0 +1,24 @@
+<!doctype html>
+<!-- S0.2 measurement page (throwaway probe, tools/spikes carve-out).
+     Served by the vite dev server so `import 'three'` resolves to the pinned
+     dependency. Driven by measure.mjs over Playwright; configuration comes in
+     via query parameters:
+       ?mode=smoke
+       ?mode=depth&depth=log|revz|revz-f32|std
+       ?mode=flight&scheme=quadtree|cdlod&depth=log|revz|revz-f32|std
+     Results are published on window.__s02 (ready/done/error/result). -->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>S0.2 planet-LOD probe</title>
+    <style>
+      html, body { margin: 0; padding: 0; background: #0b1026; overflow: hidden; }
+      canvas { display: block; width: 100vw; height: 100vh; }
+    </style>
+  </head>
+  <body>
+    <canvas id="c"></canvas>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

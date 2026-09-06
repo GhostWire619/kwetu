@@ -1,0 +1,30 @@
+{
+  // S0.2 spike-local strict typecheck. The root tsconfig.json excludes
+  // tools/spikes (the throwaway carve-out), so this program gives the probe
+  // the same strictness floor the production code is held to: strict,
+  // noUncheckedIndexedAccess, exactOptionalPropertyTypes, moduleResolution
+  // "bundler", imports strictly from 'three' + @types/three.
+  // Run: npx tsc -p tools/spikes/s0.2/tsconfig.json --noEmit
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "skipLibCheck": true,
+    "types": [],
+    "noEmit": true
+  },
+  "include": [
+    "./planetCommon.ts",
+    "./flightPath.ts",
+    "./quadtreePlanet.ts",
+    "./cdlodPlanet.ts",
+    "./depthModes.ts",
+    "./probe.test.ts",
+    "./page/**/*.ts"
+  ],
+  "exclude": ["node_modules", "./page/dist"]
+}

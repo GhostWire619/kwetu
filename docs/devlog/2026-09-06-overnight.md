@@ -188,3 +188,20 @@ checks them.
   0 failures).
 - Next: Night D (Earth data streaming into the Part B shell), Night E (walk
   wiring + localScene unification), then the morning report.
+
+## 10:55 — Playable surface integration verified
+- Surface mode now loads the real Stone Town terrain GLB and builds a matching
+  Rapier trimesh collider. The existing character and vehicle controllers share
+  one fixed 60 Hz physics loop. Keyboard input covers walking, jumping, entering
+  and leaving the nearby car, steering, braking, camera movement and reset.
+- A Swahili-first HUD provides controls, mode, speed, help, credits and an English
+  toggle. The surface mode is dynamically imported, so the physics runtime does
+  not inflate the initial space-shell chunk.
+- Region browser coverage now compares terrain triangles against the same camera
+  pose in space mode and projects the tile anchor correctly. The real terrain-bake
+  test has an explicit 60 s timeout, and the S0.2 quadtree thrash probe is green.
+- Final local gates: typecheck PASS; Vitest 30 files / 461 tests PASS; Playwright
+  10/10 PASS across Chromium and Firefox; production build PASS; license ledger
+  PASS with 0 violations and 3 existing warnings. Build sizes: space shell
+  685.39 kB raw / 185.63 kB gzip; separate surface chunk 2,922.77 kB raw /
+  1,117.78 kB gzip. Integrated-GPU frame-rate evidence remains open.

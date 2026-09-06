@@ -277,6 +277,7 @@ describe('bake() integration — real Copernicus GLO-30 tiles', () => {
       expect(manifestOnDisk.source.tiles).toHaveLength(SOURCE_TILES.length);
       expect(manifestOnDisk.source.tiles.every((t) => t.md5MatchesUpstreamEtag)).toBe(true);
     },
+    60_000, // real-data bake: downloads/decodes Copernicus GLO-30 tiles; measured >5s
   );
 
   afterAll(async () => {

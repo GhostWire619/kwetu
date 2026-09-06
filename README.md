@@ -8,14 +8,14 @@ select, no cutscene, one continuous camera — with flagship Earth regions on th
 interface itself, not a settings checkbox. Accounts, friends, chat, and proximity voice are welded
 to that shared physical world. The intent, and the vision: [PROJECT_VISION.md](PROJECT_VISION.md).
 
-## Status: pre-code, docs-first
+## Status: early implementation
 
-**No engine exists yet.** This repository currently contains the documentation foundation:
-the vision, the architecture, the legal ledger, and the roadmap. Phase 0 (the measurement
-spikes) has not run. **Nothing in [ROADMAP.md](ROADMAP.md) is a promise until the matching
-exit criterion passes in a browser, on the target hardware, for a real person** — every
-performance figure in these docs is a visibly tagged placeholder or a measurement, never a
-marketing number.
+The repository now contains an engine foundation, browser rendering shell, real Stone Town
+terrain loading, a playable walking/driving surface prototype, orbital calculations and
+multiplayer/voice groundwork. These systems are at different integration stages; the full
+shared universe is not yet connected. See [local testing](docs/LOCAL_TESTING.md) for controls,
+verified browser results, the playable surface entry point and diagnostic views.
+Phase completion still requires the browser and target-hardware evidence in [ROADMAP.md](ROADMAP.md).
 
 ## Documentation map
 
@@ -43,13 +43,12 @@ marketing number.
 
 ## Running it
 
-Nothing to run yet — there is no code. When the first runnable code lands (after Phase 0),
-the shape is: a dev shell under WSL2, Docker Desktop, and `docker compose up` bringing up
-Caddy (TLS termination + static client), Nakama + Postgres (accounts, matches, chat), and
-LiveKit (voice). Two requirements hold from day one, even in local development: the game is
-served over **HTTPS/WSS with real certificates** (microphone access exists only in a secure
-context), and all Nakama defaults are changed before anything is exposed beyond localhost.
-The authoritative run instructions will live here once they exist.
+With the locked dependencies installed (`npm ci`), run
+`npm run dev -- --host 127.0.0.1 --port 5199` from the repository root. Open the Vite URL
+with `?mode=surface` for the local surface test or `?mode=space` for the space-camera diagnostic.
+Terrain data prerequisites and the existing root-serving test URL are in [local testing](docs/LOCAL_TESTING.md).
+The local surface prototype needs no account or backend. The separate Nakama/Postgres/LiveKit
+development stack is documented in [infra/README-dev.md](infra/README-dev.md).
 
 ## Browsers
 
